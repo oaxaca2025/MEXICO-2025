@@ -489,6 +489,7 @@
     <div class="days-container" id="daysContainer"></div>
   </div>
 
+  <!-- MODAL ALLEGATI -->
   <div class="modal" id="attachmentModal">
     <div class="modal-content">
       <h2>Aggiungi Allegato</h2>
@@ -527,136 +528,140 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
   <script>
+    // VARIABILI GLOBALI SEMPLIFICATE
+    let tripData = { 
+      days: [], 
+      background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' 
+    };
+    
+    // CONTESTO PER ALLEGATI - VARIABILI GLOBALI SEMPLICI
+    let currentDayId = null;
+    let currentSectionType = null;
+
     document.addEventListener('DOMContentLoaded', function() {
-      // STATO APPLICAZIONE
-      let tripData = { 
-        days: [], 
-        background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' 
-      };
-      
-      let currentAttachmentContext = null;
-
-      // ELEMENTI DOM
-      const elements = {
-        introPage: document.getElementById('introPage'),
-        plannerContainer: document.getElementById('plannerContainer'),
-        daysContainer: document.getElementById('daysContainer'),
-        attachmentModal: document.getElementById('attachmentModal'),
-        attachmentFileInput: document.getElementById('attachmentFileInput'),
-        backgroundModal: document.getElementById('backgroundModal')
-      };
-
       // INIZIALIZZAZIONE
-      init();
+      initApp();
 
-      function init() {
+      function initApp() {
         loadData();
         setupEventListeners();
       }
 
-      // GESTIONE EVENTI SEMPLIFICATA
       function setupEventListeners() {
-        // Navigazione
+        // NAVIGAZIONE BASE
         document.getElementById('startBtn').addEventListener('click', showPlanner);
         document.getElementById('homeBtn').addEventListener('click', showIntro);
-        document.getElementById('bgBtn').addEventListener('click', () => elements.backgroundModal.style.display = 'flex');
-        document.getElementById('backgroundBtn').addEventListener('click', () => elements.backgroundModal.style.display = 'flex');
+        document.getElementById('bgBtn').addEventListener('click', showBackgroundModal);
+        document.getElementById('backgroundBtn').addEventListener('click', showBackgroundModal);
         
-        // Giorni
+        // GESTIONE GIORNI
         document.getElementById('addDayBtn').addEventListener('click', addNewDay);
         document.getElementById('saveBtn').addEventListener('click', saveData);
         document.getElementById('resetBtn').addEventListener('click', resetPlanner);
         
-        // Modali
-        document.getElementById('cancelBgBtn').addEventListener('click', () => elements.backgroundModal.style.display = 'none');
+        // MODALI
+        document.getElementById('cancelBgBtn').addEventListener('click', hideBackgroundModal);
         document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
-        document.getElementById('cancelAttachBtn').addEventListener('click', closeAttachmentModal);
-        document.getElementById('confirmAttachBtn').addEventListener('click', handleAttachmentConfirm);
+        document.getElementById('cancelAttachBtn').addEventListener('click', hideAttachmentModal);
+        document.getElementById('confirmAttachBtn').addEventListener('click', confirmAttachment);
         
-        // Delegazione eventi per i giorni (IMPORTANTE!)
-        elements.daysContainer.addEventListener('click', function(e) {
+        // DELEGAZIONE EVENTI - QUESTA È LA CHIAVE!
+        document.getElementById('daysContainer').addEventListener('click', function(e) {
           const target = e.target;
           
-          // Aggiungi allegato
+          // CLICK SU "AGGIUNGI ALLEGATO"
           if (target.classList.contains('add-attachment-btn')) {
-            const dayCard = target.closest('.day-card');
-            const dayId = dayCard.dataset.id;
-            const sectionType = target.dataset.sectionType;
-            const day = tripData.days.find(d => d.id === dayId);
+            e.preventDefault();
+            const button = target;
+            const dayCard = button.closest('.day-card');
+            const section = button.closest('.section');
             
-            if (day && sectionType) {
-              currentAttachmentContext = { day, sectionType };
-              elements.attachmentModal.style.display = 'flex';
-              elements.attachmentFileInput.value = '';
+            if (dayCard && section) {
+              currentDayId = dayCard.dataset.id;
+              currentSectionType = section.classList[1]; // places, accommodation, etc.
+              
+              console.log('Apertura modal allegato:', { currentDayId, currentSectionType });
+              showAttachmentModal();
             }
+            return;
           }
           
-          // Elimina allegato
-          else if (target.classList.contains('delete-attachment-btn')) {
-            const attachmentItem = target.closest('.attachment-item');
+          // CLICK SU "ELIMINA ALLEGATO"
+          if (target.classList.contains('delete-attachment-btn')) {
+            e.preventDefault();
+            const deleteBtn = target;
+            const attachmentItem = deleteBtn.closest('.attachment-item');
             const dayCard = attachmentItem.closest('.day-card');
-            const dayId = dayCard.dataset.id;
-            const sectionType = attachmentItem.dataset.sectionType;
-            const attachmentIndex = parseInt(attachmentItem.dataset.attachmentIndex);
+            const section = attachmentItem.closest('.section');
             
-            const day = tripData.days.find(d => d.id === dayId);
-            if (day && sectionType && day[sectionType]) {
-              day[sectionType].attachments.splice(attachmentIndex, 1);
+            if (dayCard && section && attachmentItem) {
+              const dayId = dayCard.dataset.id;
+              const sectionType = section.classList[1];
+              const attachmentIndex = parseInt(attachmentItem.dataset.index);
+              
+              deleteAttachment(dayId, sectionType, attachmentIndex);
+            }
+            return;
+          }
+          
+          // CLICK SU "ELIMINA GIORNO"
+          if (target.classList.contains('delete-day')) {
+            e.preventDefault();
+            const dayCard = target.closest('.day-card');
+            if (dayCard && confirm('Eliminare questo giorno?')) {
+              const dayId = dayCard.dataset.id;
+              tripData.days = tripData.days.filter(day => day.id !== dayId);
               saveData();
               renderAllDays();
             }
+            return;
           }
           
-          // Visualizza allegato
-          else if (target.closest('.attachment-item')) {
+          // CLICK SU ALLEGATO PER VISUALIZZARE
+          if (target.closest('.attachment-item')) {
+            e.preventDefault();
             const attachmentItem = target.closest('.attachment-item');
             const dayCard = attachmentItem.closest('.day-card');
-            const dayId = dayCard.dataset.id;
-            const sectionType = attachmentItem.dataset.sectionType;
-            const attachmentIndex = parseInt(attachmentItem.dataset.attachmentIndex);
+            const section = attachmentItem.closest('.section');
             
-            const day = tripData.days.find(d => d.id === dayId);
-            if (day && sectionType && day[sectionType]) {
-              const attachment = day[sectionType].attachments[attachmentIndex];
-              openAttachmentView(attachment);
-            }
-          }
-          
-          // Elimina giorno
-          else if (target.classList.contains('delete-day')) {
-            const dayCard = target.closest('.day-card');
-            const dayId = dayCard.dataset.id;
-            
-            if (confirm('Eliminare questo giorno?')) {
-              tripData.days = tripData.days.filter(d => d.id !== dayId);
-              saveData();
-              renderAllDays();
+            if (dayCard && section && attachmentItem) {
+              const dayId = dayCard.dataset.id;
+              const sectionType = section.classList[1];
+              const attachmentIndex = parseInt(attachmentItem.dataset.index);
+              
+              viewAttachment(dayId, sectionType, attachmentIndex);
             }
           }
         });
 
-        // Input nei giorni
-        elements.daysContainer.addEventListener('input', function(e) {
+        // GESTIONE INPUT TESTI
+        document.getElementById('daysContainer').addEventListener('input', function(e) {
           if (e.target.classList.contains('editable')) {
-            const dayCard = e.target.closest('.day-card');
-            const dayId = dayCard.dataset.id;
-            const sectionType = e.target.closest('.section').classList[1];
-            const day = tripData.days.find(d => d.id === dayId);
+            const editable = e.target;
+            const dayCard = editable.closest('.day-card');
+            const section = editable.closest('.section');
             
-            if (day && sectionType) {
-              if (!day[sectionType]) day[sectionType] = { text: '', attachments: [] };
-              day[sectionType].text = e.target.innerHTML;
-              saveData();
+            if (dayCard && section) {
+              const dayId = dayCard.dataset.id;
+              const sectionType = section.classList[1];
+              const day = tripData.days.find(d => d.id === dayId);
+              
+              if (day) {
+                if (!day[sectionType]) day[sectionType] = { text: '', attachments: [] };
+                day[sectionType].text = editable.innerHTML;
+                saveData();
+              }
             }
           }
           
-          else if (e.target.classList.contains('day-title')) {
-            const dayCard = e.target.closest('.day-card');
+          if (e.target.classList.contains('day-title')) {
+            const titleInput = e.target;
+            const dayCard = titleInput.closest('.day-card');
             const dayId = dayCard.dataset.id;
             const day = tripData.days.find(d => d.id === dayId);
             
             if (day) {
-              day.title = e.target.value;
+              day.title = titleInput.value;
               saveData();
             }
           }
@@ -665,13 +670,13 @@
 
       // FUNZIONI PRINCIPALI
       function showPlanner() { 
-        elements.introPage.style.display = 'none'; 
-        elements.plannerContainer.style.display = 'block'; 
+        document.getElementById('introPage').style.display = 'none'; 
+        document.getElementById('plannerContainer').style.display = 'block'; 
       }
       
       function showIntro() { 
-        elements.plannerContainer.style.display = 'none'; 
-        elements.introPage.style.display = 'flex'; 
+        document.getElementById('plannerContainer').style.display = 'none'; 
+        document.getElementById('introPage').style.display = 'flex'; 
       }
 
       function loadData() {
@@ -683,7 +688,6 @@
             console.error('Errore caricamento dati:', e);
           }
         }
-        applyBackground(tripData.background);
         renderAllDays();
       }
 
@@ -693,11 +697,11 @@
       }
 
       function renderAllDays() {
-        elements.daysContainer.innerHTML = '';
+        const daysContainer = document.getElementById('daysContainer');
+        daysContainer.innerHTML = '';
         
         tripData.days.forEach((day, index) => {
-          const dayElement = createDayElement(day, index);
-          elements.daysContainer.appendChild(dayElement);
+          daysContainer.appendChild(createDayElement(day, index));
         });
       }
 
@@ -708,6 +712,12 @@
         
         const dayNumber = index + 1;
         const dayTitle = day.title || `Giorno ${dayNumber}`;
+        
+        // Assicurati che tutte le sezioni esistano
+        if (!day.places) day.places = { text: '', attachments: [] };
+        if (!day.accommodation) day.accommodation = { text: '', attachments: [] };
+        if (!day.transport) day.transport = { text: '', attachments: [] };
+        if (!day.notes) day.notes = { text: '', attachments: [] };
         
         dayElement.innerHTML = `
           <div class="day-header">
@@ -727,9 +737,9 @@
             <div class="section places">
               <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Luoghi da Visitare</h3>
               <div class="section-content">
-                <div class="editable" contenteditable="true">${day.places?.text || ''}</div>
-                <div class="file-attachments">${renderAttachments(day.places?.attachments || [], 'places')}</div>
-                <button class="add-attachment-btn" data-section-type="places">
+                <div class="editable" contenteditable="true">${day.places.text}</div>
+                <div class="file-attachments">${renderAttachments(day.places.attachments, 'places')}</div>
+                <button class="add-attachment-btn" data-section="places">
                   <i class="fas fa-paperclip"></i> Aggiungi allegato
                 </button>
               </div>
@@ -737,9 +747,9 @@
             <div class="section accommodation">
               <h3 class="section-title"><i class="fas fa-hotel"></i> Alloggio</h3>
               <div class="section-content">
-                <div class="editable" contenteditable="true">${day.accommodation?.text || ''}</div>
-                <div class="file-attachments">${renderAttachments(day.accommodation?.attachments || [], 'accommodation')}</div>
-                <button class="add-attachment-btn" data-section-type="accommodation">
+                <div class="editable" contenteditable="true">${day.accommodation.text}</div>
+                <div class="file-attachments">${renderAttachments(day.accommodation.attachments, 'accommodation')}</div>
+                <button class="add-attachment-btn" data-section="accommodation">
                   <i class="fas fa-paperclip"></i> Aggiungi allegato
                 </button>
               </div>
@@ -747,9 +757,9 @@
             <div class="section transport">
               <h3 class="section-title"><i class="fas fa-bus"></i> Trasporti</h3>
               <div class="section-content">
-                <div class="editable" contenteditable="true">${day.transport?.text || ''}</div>
-                <div class="file-attachments">${renderAttachments(day.transport?.attachments || [], 'transport')}</div>
-                <button class="add-attachment-btn" data-section-type="transport">
+                <div class="editable" contenteditable="true">${day.transport.text}</div>
+                <div class="file-attachments">${renderAttachments(day.transport.attachments, 'transport')}</div>
+                <button class="add-attachment-btn" data-section="transport">
                   <i class="fas fa-paperclip"></i> Aggiungi allegato
                 </button>
               </div>
@@ -757,9 +767,9 @@
             <div class="section notes">
               <h3 class="section-title"><i class="fas fa-sticky-note"></i> Note</h3>
               <div class="section-content">
-                <div class="editable" contenteditable="true">${day.notes?.text || ''}</div>
-                <div class="file-attachments">${renderAttachments(day.notes?.attachments || [], 'notes')}</div>
-                <button class="add-attachment-btn" data-section-type="notes">
+                <div class="editable" contenteditable="true">${day.notes.text}</div>
+                <div class="file-attachments">${renderAttachments(day.notes.attachments, 'notes')}</div>
+                <button class="add-attachment-btn" data-section="notes">
                   <i class="fas fa-paperclip"></i> Aggiungi allegato
                 </button>
               </div>
@@ -767,7 +777,7 @@
           </div>
         `;
 
-        // Inizializza datepicker
+        // Datepicker
         const dateEl = dayElement.querySelector('.day-date');
         if (window.flatpickr) {
           window.flatpickr(dateEl, {
@@ -787,7 +797,7 @@
 
       function renderAttachments(attachments, sectionType) {
         return attachments.map((attachment, index) => `
-          <div class="attachment-item" data-section-type="${sectionType}" data-attachment-index="${index}">
+          <div class="attachment-item" data-index="${index}">
             <div class="attachment-thumbnail">
               ${attachment.type.includes('image') 
                 ? `<img src="${attachment.data}" alt="${attachment.name}">` 
@@ -800,39 +810,54 @@
       }
 
       // GESTIONE ALLEGATI - VERSIONE SEMPLIFICATA E FUNZIONANTE
-      function handleAttachmentConfirm() {
-        const fileInput = elements.attachmentFileInput;
+      function showAttachmentModal() {
+        document.getElementById('attachmentModal').style.display = 'flex';
+        document.getElementById('attachmentFileInput').value = '';
+      }
+
+      function hideAttachmentModal() {
+        document.getElementById('attachmentModal').style.display = 'none';
+        currentDayId = null;
+        currentSectionType = null;
+      }
+
+      function confirmAttachment() {
+        const fileInput = document.getElementById('attachmentFileInput');
+        const file = fileInput.files[0];
         
-        if (!fileInput.files.length) {
-          showNotification('Seleziona un file!', 'error');
+        if (!file) {
+          showNotification('Seleziona un file prima di confermare!', 'error');
           return;
         }
 
-        const file = fileInput.files[0];
-        
+        if (!currentDayId || !currentSectionType) {
+          showNotification('Errore: contesto non valido', 'error');
+          return;
+        }
+
         // Verifica tipo file
         if (!file.type.match(/image\/*/) && !file.type.match(/application\/pdf/)) {
-          showNotification('File non supportato. Usa immagini o PDF.', 'error');
+          showNotification('Formato file non supportato. Usa immagini o PDF.', 'error');
           return;
         }
 
         const reader = new FileReader();
         
         reader.onload = function(e) {
-          if (!currentAttachmentContext) {
-            showNotification('Errore: contesto non valido', 'error');
+          // Trova il giorno corretto
+          const day = tripData.days.find(d => d.id === currentDayId);
+          if (!day) {
+            showNotification('Giorno non trovato', 'error');
             return;
           }
 
-          const { day, sectionType } = currentAttachmentContext;
-          
           // Assicurati che la sezione esista
-          if (!day[sectionType]) {
-            day[sectionType] = { text: '', attachments: [] };
+          if (!day[currentSectionType]) {
+            day[currentSectionType] = { text: '', attachments: [] };
           }
 
           // Aggiungi l'allegato
-          day[sectionType].attachments.push({
+          day[currentSectionType].attachments.push({
             name: file.name,
             type: file.type,
             data: e.target.result
@@ -840,8 +865,14 @@
 
           saveData();
           renderAllDays();
-          closeAttachmentModal();
-          showNotification('Allegato aggiunto!', 'success');
+          hideAttachmentModal();
+          showNotification('Allegato aggiunto con successo!', 'success');
+          
+          console.log('Allegato aggiunto:', {
+            day: currentDayId,
+            section: currentSectionType,
+            file: file.name
+          });
         };
 
         reader.onerror = function() {
@@ -851,28 +882,36 @@
         reader.readAsDataURL(file);
       }
 
-      function closeAttachmentModal() {
-        elements.attachmentModal.style.display = 'none';
-        currentAttachmentContext = null;
-        elements.attachmentFileInput.value = '';
+      function deleteAttachment(dayId, sectionType, index) {
+        const day = tripData.days.find(d => d.id === dayId);
+        if (day && day[sectionType]) {
+          day[sectionType].attachments.splice(index, 1);
+          saveData();
+          renderAllDays();
+          showNotification('Allegato eliminato', 'success');
+        }
       }
 
-      function openAttachmentView(attachment) {
-        const viewer = document.createElement('div');
-        viewer.style.cssText = `
-          position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-          background: rgba(0,0,0,0.9); z-index: 10000; display: flex; 
-          justify-content: center; align-items: center; cursor: pointer;
-        `;
-        
-        if (attachment.type.includes('image')) {
-          viewer.innerHTML = `<img src="${attachment.data}" style="max-width: 90%; max-height: 90%;">`;
-        } else {
-          viewer.innerHTML = `<iframe src="${attachment.data}" style="width: 90%; height: 90%; border: none;"></iframe>`;
+      function viewAttachment(dayId, sectionType, index) {
+        const day = tripData.days.find(d => d.id === dayId);
+        if (day && day[sectionType]) {
+          const attachment = day[sectionType].attachments[index];
+          const viewer = document.createElement('div');
+          viewer.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); z-index: 10000; display: flex; 
+            justify-content: center; align-items: center; cursor: pointer;
+          `;
+          
+          if (attachment.type.includes('image')) {
+            viewer.innerHTML = `<img src="${attachment.data}" style="max-width: 90%; max-height: 90%;">`;
+          } else {
+            viewer.innerHTML = `<iframe src="${attachment.data}" style="width: 90%; height: 90%; border: none;"></iframe>`;
+          }
+          
+          viewer.onclick = () => document.body.removeChild(viewer);
+          document.body.appendChild(viewer);
         }
-        
-        viewer.onclick = () => document.body.removeChild(viewer);
-        document.body.appendChild(viewer);
       }
 
       function addNewDay() {
@@ -900,17 +939,24 @@
         return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
       }
 
+      function showBackgroundModal() {
+        document.getElementById('backgroundModal').style.display = 'flex';
+      }
+
+      function hideBackgroundModal() {
+        document.getElementById('backgroundModal').style.display = 'none';
+      }
+
       function applyBackground() {
-        const bg = 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80';
-        document.body.style.backgroundImage = `url('${bg}')`;
-        elements.backgroundModal.style.display = 'none';
+        document.getElementById('backgroundModal').style.display = 'none';
       }
 
       function resetPlanner() {
-        if (confirm('Resettare tutto?')) {
+        if (confirm('Resettare tutto? I dati andranno persi.')) {
           tripData.days = [];
           saveData();
           renderAllDays();
+          showNotification('Planner resettato', 'info');
         }
       }
 
@@ -920,7 +966,8 @@
         const text = document.getElementById('notificationText');
         
         text.textContent = message;
-        icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+        icon.className = type === 'success' ? 'fas fa-check-circle' : 
+                        type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-info-circle';
         notification.className = 'notification show';
         
         setTimeout(() => {
