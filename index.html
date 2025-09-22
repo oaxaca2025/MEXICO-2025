@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>OAXACA 2025 - Planner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+      font-family: 'Oswald', sans-serif;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      position: relative;
+      transition: background-image .5s ease;
+      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+    }
+
+    .intro-page {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+      padding-bottom: 0;
+    }
+    
+    .intro-title {
+      font-family: 'Special Elite', cursive;
+      color: #ff0000;
+      font-size: clamp(3rem, 12vw, 8rem);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,.3);
+    }
+    
+    .intro-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 0 20px;
+      margin-bottom: 20px;
+    }
+    
+    .start-btn, .bg-btn {
+      background: rgba(255,255,255,.9);
+      color: #000;
+      border: 2px solid #000;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all .3s;
+      font-family: 'Oswald', sans-serif;
+      min-width: 180px;
+      justify-content: center;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    .start-btn:hover, .bg-btn:hover {
+      background: rgba(0,0,0,.1);
+      transform: translateY(-2px);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: none;
+      overflow: visible;
+    }
+    
+    .planner-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      flex-wrap: wrap;
+      background: transparent;
+    }
+    
+    .planner-title {
+      font-family: 'Special Elite', cursive;
+      color: #ff0000;
+      font-size: 2.5rem;
+      margin: 0;
+      text-shadow: 1px 1px 2px rgba(0,0,0,.3);
+      flex: 1;
+    }
+    
+    .header-right-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      min-width: 250px;
+    }
+    
+    .header-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    
+    .add-day-btn, .dropdown-btn {
+      background: transparent;
+      color: #000;
+      border: 2px solid #000;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-size: .9rem;
+      transition: all .3s;
+      font-family: 'Oswald', sans-serif;
+    }
+    
+    .add-day-btn:hover, .dropdown-btn:hover {
+      background: rgba(0,0,0,.1);
+      transform: translateY(-2px);
+    }
+
+    .search-container {
+      position: relative;
+      width: 100%;
+    }
+    
+    .search-input {
+      padding: 8px 35px 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: 'Oswald', sans-serif;
+      width: 100%;
+      font-size: .9rem;
+      background: rgba(255,255,255,.8);
+    }
+    
+    .search-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #777;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: #fff;
+      min-width: 180px;
+      box-shadow: 0 8px 16px rgba(0,0,0,.2);
+      z-index: 10000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+    }
+    
+    .dropdown-content a {
+      color: 000;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color .3s;
+      font-size: .9rem;
+    }
+    
+    .dropdown-content a:hover {
+      background: #f1f1f1;
+    }
+    
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .days-container {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    
+    .day-card {
+      background: rgba(255,255,255,.9);
+      border-radius: 15px;
+      padding: 25px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.5);
+      box-shadow: 0 5px 15px rgba(0,0,0,.1);
+      backdrop-filter: blur(5px);
+      transition: transform .3s, box-shadow .3s;
+    }
+    
+    .day-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,.15);
+    }
+    
+    .day-card.dragging {
+      opacity: .7;
+      transform: rotate(5deg);
+    }
+    
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(0,0,0,.1);
+    }
+    
+    .day-date-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .day-date {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #000;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .3s;
+      border: 1px dashed transparent;
+    }
+    
+    .day-date:hover {
+      background: rgba(0,0,0,.05);
+    }
+    
+    .day-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #555;
+      background: rgba(255,255,255,.7);
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      width: auto;
+      min-width: 120px;
+    }
+    
+    .day-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .delete-day, .drag-handle {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 1.2rem;
+      background: rgba(255,255,255,.7);
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .3s;
+    }
+    
+    .delete-day:hover {
+      color: #e74c3c;
+      background: rgba(255,255,255,.9);
+    }
+    
+    .drag-handle {
+      cursor: grab;
+    }
+    
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .day-content {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .section {
+      padding: 20px;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,.08);
+      transition: transform .3s;
+    }
+    
+    .section:hover {
+      transform: translateY(-3px);
+    }
+    
+    .section.places {
+      background: rgba(173,216,230,.8);
+    }
+    
+    .section.accommodation {
+      background: rgba(255,182,193,.8);
+    }
+    
+    .section.transport {
+      background: rgba(144,238,144,.8);
+    }
+    
+    .section.notes {
+      background: rgba(255,255,153,.8);
+    }
+    
+    .section-title {
+      font-family: 'Special Elite', cursive;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #000;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      border-bottom: 2px solid rgba(0,0,0,.1);
+      padding-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .section-content {
+      padding: 15px;
+      border: 1px dashed rgba(0,0,0,.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,.5);
+    }
+    
+    .editable {
+      min-height: 80px;
+      padding: 10px;
+      outline: none;
+      width: 100%;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .file-attachments {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .attachment-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 8px;
+      background: rgba(255,255,255,.8);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.5);
+      cursor: pointer;
+      transition: all .2s;
+      width: 100px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .attachment-item:hover {
+      background: #fff;
+      transform: translateY(-2px);
+    }
+    
+    .attachment-thumbnail {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #7F8C8D;
+    }
+    
+    .attachment-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    
+    .attachment-name {
+      font-size: .7rem;
+      color: #000;
+      word-break: break-all;
+      width: 100%;
+    }
+    
+    .delete-attachment-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .attachment-item:hover .delete-attachment-btn {
+      display: flex;
+    }
+    
+    .add-attachment-btn {
+      background: none;
+      border: none;
+      color: #7F8C8D;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: .9rem;
+      margin-top: 10px;
+      transition: all .2s;
+      padding: 5px;
+    }
+    
+    .add-attachment-btn:hover {
+      color: #2980B9;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,.7);
+      z-index: 5000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 5px 25px rgba(0,0,0,.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-title {
+      font-family: 'Special Elite', cursive;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    .bg-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .bg-option {
+      height: 100px;
+      border-radius: 8px;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid transparent;
+      transition: all .3s;
+    }
+    
+    .bg-option:hover {
+      transform: scale(1.05);
+    }
+    
+    .bg-option.selected {
+      border-color: #000;
+    }
+
+    .file-input-container {
+      margin-top: 15px;
+      position: relative;
+    }
+    
+    .file-input-label {
+      display: block;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    
+    .file-input-label:hover {
+      background: #e0e0e0;
+    }
+    
+    .file-input {
+      position: absolute;
+      left: -9999px;
+    }
+    
+    .custom-bg-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .modal-btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 500;
+      border: 1px solid #000;
+      background: transparent;
+      transition: all .3s;
+      min-width: 100px;
+    }
+    
+    .modal-btn.primary {
+      background: #000;
+      color: #fff;
+    }
+    
+    .modal-btn:hover {
+      background: rgba(0,0,0,.1);
+    }
+    
+    .modal-btn.primary:hover {
+      background: #333;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: #fff;
+      font-size: .9rem;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      background: #333;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 6000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .fullscreen-attachment {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      cursor: pointer;
+    }
+    
+    .fullscreen-attachment img {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+    }
+    
+    .close-fullscreen {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        background-attachment: scroll;
+      }
+      
+      .intro-page {
+        padding: 10px;
+        padding-bottom: 0;
+        justify-content: flex-start;
+        padding-top: 20vh;
+      }
+      
+      .intro-title {
+        margin-bottom: 30px;
+        letter-spacing: 4px;
+      }
+      
+      .intro-buttons {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+        max-width: 300px;
+      }
+      
+      .start-btn, .bg-btn {
+        width: 100%;
+        padding: 15px;
+        min-height: 44px;
+      }
+      
+      .day-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .planner-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding: 15px;
+      }
+      
+      .planner-title {
+        font-size: 1.8rem;
+        text-align: center;
+        width: 100%;
+      }
+      
+      .header-right-section {
+        width: 100%;
+        align-items: flex-start;
+      }
+      
+      .header-buttons {
+        justify-content: space-between;
+        width: 100%;
+      }
+      
+      .add-day-btn, .dropdown-btn {
+        padding: 10px 15px;
+        font-size: 0.85rem;
+        min-height: 44px;
+      }
+      
+      .day-card {
+        padding: 20px 15px;
+        border-radius: 12px;
+      }
+      
+      .day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .day-date-container {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      
+      .day-actions {
+        align-self: flex-end;
+      }
+      
+      .section {
+        padding: 15px;
+      }
+      
+      .section-title {
+        font-size: 1.1rem;
+      }
+      
+      .section-content {
+        padding: 12px;
+      }
+      
+      .modal-content {
+        padding: 20px;
+        width: 95%;
+        margin: 20px;
+      }
+      
+      .bg-options {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-buttons {
+        flex-direction: column;
+      }
+      
+      .modal-btn {
+        width: 100%;
+      }
+      
+      .dropdown-content {
+        right: auto;
+        left: 0;
+        min-width: 200px;
+      }
+      
+      .file-attachments {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+      
+      .attachment-item {
+        width: 85px;
+        flex-shrink: 0;
+      }
+      
+      .attachment-thumbnail {
+        width: 50px;
+        height: 50px;
+      }
+      
+      footer {
+        margin-top: 30px;
+        padding: 15px;
+        font-size: 0.8rem;
+      }
+      
+      input, select, textarea {
+        font-size: 16px;
+      }
+      
+      .editable:focus {
+        font-size: 16px;
+      }
+      
+      /* CORREZIONE: Nascondi l'input di flatpickr che causa la data duplicata */
+      .flatpickr-input {
+        display: none !important;
+      }
+      
+      .day-date input {
+        display: none !important;
+      }
+    }
+
+    @supports(padding: max(0px)) {
+      .intro-page, .container, .modal {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+      
+      .intro-buttons {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+      
+      body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      
+      .planner-header, .day-card {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="intro-page" id="introPage">
+    <h1 class="intro-title">OAXACA 2025</h1>
+    <div class="intro-buttons">
+      <button class="start-btn" id="startBtn"><i class="fas fa-pencil-alt"></i> Inizia a pianificare</button>
+      <button class="bg-btn" id="bgBtn"><i class="fas fa-image"></i> Sfondo</button>
+    </div>
+  </div>
+
+  <div class="container" id="plannerContainer">
+    <div class="planner-header">
+      <h1 class="planner-title" id="dynamicTitle">OAXACA 2025</h1>
+      <div class="header-right-section">
+        <div class="header-buttons">
+          <button class="add-day-btn" id="addDayBtn"><i class="fas fa-plus"></i> Aggiungi Giorno</button>
+          <div class="dropdown">
+            <button class="dropdown-btn"><i class="fas fa-ellipsis-v"></i></button>
+            <div class="dropdown-content">
+              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva</a>
+              <a href="#" id="exportBtn"><i class="fas fa-download"></i> Esporta/Stampa</a>
+              <a href="#" id="resetBtn"><i class="fas fa-trash"></i> Reset Planner</a>
+              <a href="#" id="backgroundBtn"><i class="fas fa-image"></i> Sfondo</a>
+              <a href="#" id="homeBtn"><i class="fas fa-home"></i> Home</a>
+            </div>
+          </div>
+        </div>
+        <div class="search-container">
+          <input type="text" class="search-input" id="searchInput" placeholder="Cerca..." />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="days-container" id="daysContainer"></div>
+
+    <footer><p>OAXACA 2025 &copy; - Dati salvati nel browser</p></footer>
+  </div>
+
+  <div class="modal" id="backgroundModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Seleziona Sfondo</h2>
+      <div class="bg-options" id="bgOptions">
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
+      </div>
+      <div class="file-input-container">
+        <label for="bgFileInput" class="file-input-label"><i class="fas fa-upload"></i> Carica immagine</label>
+        <input type="file" id="bgFileInput" class="file-input" accept="image/*" />
+      </div>
+      <input type="text" class="custom-bg-input" id="customBgInput" placeholder="Incolla URL immagine" />
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelBgBtn">Annulla</button>
+        <button class="modal-btn primary" id="applyBgBtn">Applica</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="attachmentModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Aggiungi Allegato</h2>
+      <div class="file-input-container">
+        <label for="attachmentFileInput" class="file-input-label"><i class="fas fa-upload"></i> Carica file (Immagine/PDF)</label>
+        <input type="file" id="attachmentFileInput" class="file-input" accept="image/*,.pdf" />
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelAttachBtn">Annulla</button>
+        <button class="modal-btn primary" id="confirmAttachBtn">Aggiungi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification">
+    <i id="notificationIcon" class="fas fa-check-circle"></i>
+    <span id="notificationText"></span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' };
+      let currentAttachmentContext = {};
+      let selectedBg = tripData.background;
+
+      const introPage = document.getElementById('introPage');
+      const plannerContainer = document.getElementById('plannerContainer');
+      const daysContainer = document.getElementById('daysContainer');
+
+      initApp();
+
+      function initApp(){
+        loadData();
+        setupEventListeners();
+      }
+
+      function setupEventListeners(){
+        document.getElementById('startBtn').addEventListener('click', showPlanner);
+        document.getElementById('bgBtn').addEventListener('click', openBackgroundModal);
+        document.getElementById('backgroundBtn').addEventListener('click', openBackgroundModal);
+        document.getElementById('homeBtn').addEventListener('click', showIntro);
+        document.getElementById('addDayBtn').addEventListener('click', addNewDay);
+        document.getElementById('saveBtn').addEventListener('click', saveData);
+        document.getElementById('resetBtn').addEventListener('click', resetPlanner);
+        document.getElementById('cancelBgBtn').addEventListener('click', closeBackgroundModal);
+        document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
+        document.getElementById('bgFileInput').addEventListener('change', handleBgFileSelect);
+        document.getElementById('cancelAttachBtn').addEventListener('click', closeAttachmentModal);
+        document.getElementById('confirmAttachBtn').addEventListener('click', handleAttachmentConfirm);
+        
+        document.getElementById('bgOptions').addEventListener('click', function(e) {
+          const target = e.target.closest('.bg-option');
+          if(!target) return;
+          selectedBg = target.dataset.bg;
+          document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+          target.classList.add('selected');
+        });
+
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
+        daysContainer.addEventListener('input', handleDayUpdate);
+        daysContainer.addEventListener('click', handleDayActions);
+      }
+
+      function showPlanner(){ 
+        introPage.style.display = 'none'; 
+        plannerContainer.style.display = 'block'; 
+        window.scrollTo(0, 0);
+      }
+      
+      function showIntro(){ 
+        plannerContainer.style.display = 'none'; 
+        introPage.style.display = 'flex'; 
+        window.scrollTo(0, 0);
+      }
+
+      function loadData(){
+        const saved = localStorage.getItem('oaxacaPlannerData');
+        if(saved){
+          try{ 
+            tripData = JSON.parse(saved) || tripData; 
+          } catch(e){
+            console.error('Errore nel caricamento dei dati:', e);
+          }
+          applyBackground(tripData.background, true);
+          renderAllDays();
+          if (tripData.days && tripData.days.length > 0) {
+            showPlanner();
+          } else {
+            showIntro();
+          }
+        } else {
+          applyBackground(tripData.background, true);
+          showIntro();
+        }
+      }
+
+      function saveData(){ 
+        localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData)); 
+        showNotification('Planner salvato!', 'success'); 
+      }
+
+      function renderAllDays(){
+        daysContainer.innerHTML = '';
+        tripData.days.forEach((day, index) => { 
+          daysContainer.appendChild(createDayCard(day, index)); 
+        });
+        
+        if (typeof Sortable !== 'undefined') {
+          new Sortable(daysContainer, {
+            handle: '.drag-handle', 
+            animation: 150,
+            onEnd: function(evt){ 
+              const moved = tripData.days.splice(evt.oldIndex, 1)[0]; 
+              tripData.days.splice(evt.newIndex, 0, moved); 
+              saveData(); 
+              renderAllDays();
+            }
+          });
+        }
+      }
+
+      // CORREZIONE COMPLETA: Risolti tutti i problemi
+      function createDayCard(day, index){
+        const card = document.createElement('div');
+        card.className = 'day-card';
+        card.dataset.id = day.id;
+        
+        // CORREZIONE 1: Mostra sempre "Giorno X" invece di solo "Giorno"
+        const dayNumber = index + 1;
+        const dayTitle = day.title && day.title !== 'Giorno' ? day.title : `Giorno ${dayNumber}`;
+        
+        // CORREZIONE 2: Data visualizzata una sola volta
+        card.innerHTML = `
+          <div class="day-header">
+            <div class="day-date-container">
+              <span class="day-date">
+                <i class="fa-regular fa-calendar"></i> 
+                <span class="date-text">${day.date}</span>
+              </span>
+              <input type="text" class="day-title" value="${dayTitle}" placeholder="Titolo giorno" />
+            </div>
+            <div class="day-actions">
+              <button class="drag-handle" title="Trascina per riordinare"><i class="fas fa-grip-vertical"></i></button>
+              <button class="delete-day" title="Elimina giorno"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="day-content">
+            ${createSection('places','Luoghi da Visitare', day)}
+            ${createSection('accommodation','Alloggio', day)}
+            ${createSection('transport','Trasporti', day)}
+            ${createSection('notes','Note', day)}
+          </div>`;
+
+        // CORREZIONE 3: Flatpickr configurato correttamente per evitare data duplicata
+        const dateEl = card.querySelector('.day-date');
+        if (typeof flatpickr !== 'undefined') {
+          flatpickr(dateEl, {
+            locale: 'it',
+            dateFormat: 'd/m/Y',
+            defaultDate: parseDate(day.date) || new Date(),
+            static: true, // Evita la creazione di input aggiuntivi
+            onChange: function(selectedDates, dateStr) { 
+              day.date = dateStr; 
+              card.querySelector('.date-text').textContent = dateStr; 
+              saveData(); 
+            }
+          });
+        }
+        
+        return card;
+      }
+
+      function createSection(type, title, day){
+        if(!day[type]) day[type] = { text:'', attachments:[] };
+        const items = day[type].attachments.map(function(att, i) {
+          return `
+          <div class="attachment-item" data-type="${type}" data-index="${i}">
+            <div class="attachment-thumbnail">${att.type.includes('image') ? `<img src="${att.data}" alt="${att.name}"/>` : `<i class='fas fa-file-pdf'></i>`}</div>
+            <div class="attachment-name">${att.name}</div>
+            <button class="delete-attachment-btn" data-index="${i}" data-type="${type}" title="Rimuovi">&times;</button>
+          </div>`;
+        }).join('');
+        
+        return `
+          <div class="section ${type}">
+            <h3 class="section-title"><i class="fas fa-${getSectionIcon(type)}"></i> ${title}</h3>
+            <div class="section-content">
+              <div class="editable" contenteditable="true">${day[type].text}</div>
+              <div class="file-attachments">${items}</div>
+              <button class="add-attachment-btn" data-type="${type}"><i class="fas fa-paperclip"></i> Aggiungi allegato</button>
+            </div>
+          </div>`;
+      }
+
+      function getSectionIcon(type){ 
+        const icons = {
+          places: 'map-marker-alt',
+          accommodation: 'hotel',
+          transport: 'bus',
+          notes: 'sticky-note'
+        };
+        return icons[type] || 'circle'; 
+      }
+
+      function addNewDay(){
+        let next = new Date();
+        if(tripData.days.length){
+          const latest = tripData.days.reduce(function(acc, d){ 
+            const dt = parseDate(d.date); 
+            return dt && dt > acc ? dt : acc; 
+          }, new Date(0));
+          next = latest > new Date(0) ? new Date(latest.getTime() + 86400000) : new Date();
+        }
+        const nd = { 
+          id: 'day_' + Date.now(), 
+          date: formatDate(next), 
+          title: 'Giorno ' + (tripData.days.length + 1), 
+          places: {text: '', attachments: []}, 
+          accommodation: {text: '', attachments: []}, 
+          transport: {text: '', attachments: []}, 
+          notes: {text: '', attachments: []} 
+        };
+        tripData.days.push(nd); 
+        saveData(); 
+        renderAllDays(); 
+      }
+
+      function parseDate(s){ 
+        if(!s) return null; 
+        const p = s.split('/'); 
+        if(p.length !== 3) return null; 
+        const d = Number(p[0]), m = Number(p[1]) - 1, y = Number(p[2]); 
+        return new Date(y, m, d); 
+      }
+
+      function formatDate(d){ 
+        return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); 
+      }
+
+      function handleDayUpdate(e){ 
+        const target = e.target; 
+        if(!target.closest('.day-card')) return; 
+        const card = target.closest('.day-card'); 
+        const day = tripData.days.find(function(d) { return d.id === card.dataset.id; }); 
+        if(!day) return; 
+        if(target.classList.contains('editable')){ 
+          const section = target.closest('.section'); 
+          const type = section.classList[1]; 
+          day[type].text = target.innerHTML; 
+        } else if(target.classList.contains('day-title')){ 
+          day.title = target.value; 
+        } 
+        saveData(); 
+      }
+
+      function handleDayActions(e){ 
+        const target = e.target; 
+        const card = target.closest('.day-card'); 
+        if(!card) return; 
+        const day = tripData.days.find(function(d) { return d.id === card.dataset.id; }); 
+        if(!day) return; 
+        
+        if(target.closest('.delete-day')){ 
+          if(confirm('Eliminare questo giorno?')){ 
+            tripData.days = tripData.days.filter(function(d) { return d.id !== day.id; }); 
+            saveData(); 
+            renderAllDays(); 
+          } 
+        } else if(target.closest('.add-attachment-btn')){ 
+          const btn = target.closest('.add-attachment-btn'); 
+          const type = btn.dataset.type; 
+          openAttachmentModal(day, type); 
+        } else if(target.closest('.delete-attachment-btn')){ 
+          const btn = target.closest('.delete-attachment-btn'); 
+          const type = btn.dataset.type; 
+          const index = Number(btn.dataset.index); 
+          day[type].attachments.splice(index, 1); 
+          saveData(); 
+          renderAllDays(); 
+        } else if(target.closest('.attachment-item')){ 
+          const item = target.closest('.attachment-item'); 
+          const index = Number(item.dataset.index); 
+          const type = item.dataset.type; 
+          const att = day[type].attachments[index]; 
+          openViewAttachmentModal(att); 
+        } 
+      }
+
+      function openAttachmentModal(day, type){ 
+        currentAttachmentContext = { day: day, type: type }; 
+        document.getElementById('attachmentModal').style.display = 'flex'; 
+      }
+
+      function closeAttachmentModal(){ 
+        document.getElementById('attachmentModal').style.display = 'none'; 
+        document.getElementById('attachmentFileInput').value = ''; 
+        currentAttachmentContext = {}; 
+      }
+
+      // CORREZIONE 4: Gestione allegati funzionante
+      function handleAttachmentConfirm(){ 
+        const fileInput = document.getElementById('attachmentFileInput'); 
+        if(!fileInput.files.length) {
+          showNotification('Seleziona un file prima di confermare', 'error');
+          return;
+        } 
+        
+        const file = fileInput.files[0]; 
+        
+        if (!file.type.match('image.*') && !file.type.match('application/pdf')) {
+          showNotification('Formato file non supportato. Usa immagini o PDF.', 'error');
+          return;
+        }
+        
+        const reader = new FileReader(); 
+        reader.onload = function(e){ 
+          const data = e.target.result; 
+          currentAttachmentContext.day[currentAttachmentContext.type].attachments.push({ 
+            name: file.name, 
+            type: file.type, 
+            data: data 
+          }); 
+          saveData(); 
+          renderAllDays(); 
+          closeAttachmentModal(); 
+          showNotification('Allegato aggiunto con successo!', 'success');
+        }; 
+        
+        reader.onerror = function() {
+          showNotification('Errore durante la lettura del file', 'error');
+        };
+        
+        reader.readAsDataURL(file); 
+      }
+
+      function openViewAttachmentModal(att){ 
+        const fullscreenView = document.createElement('div');
+        fullscreenView.className = 'fullscreen-attachment';
+        
+        if(att.type.includes('image')){ 
+          const img = document.createElement('img'); 
+          img.src = att.data; 
+          img.alt = att.name;
+          fullscreenView.appendChild(img);
+        } else { 
+          const iframe = document.createElement('iframe'); 
+          iframe.src = att.data; 
+          iframe.width = '90%';
+          iframe.height = '90%';
+          fullscreenView.appendChild(iframe);
+        }
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-fullscreen';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', function() {
+          document.body.removeChild(fullscreenView);
+        });
+        fullscreenView.appendChild(closeBtn);
+        
+        fullscreenView.addEventListener('click', function(e) {
+          if (e.target === fullscreenView) {
+            document.body.removeChild(fullscreenView);
+          }
+        });
+        
+        document.body.appendChild(fullscreenView);
+      }
+
+      function openBackgroundModal(){ 
+        document.getElementById('backgroundModal').style.display = 'flex'; 
+        selectedBg = tripData.background; 
+        document.querySelectorAll('.bg-option').forEach(function(opt) { 
+          opt.classList.toggle('selected', opt.dataset.bg === selectedBg); 
+        }); 
+      }
+
+      function closeBackgroundModal(){ 
+        document.getElementById('backgroundModal').style.display = 'none'; 
+      }
+
+      function applyBackground(){ 
+        if(!selectedBg) return; 
+        tripData.background = selectedBg; 
+        document.body.style.backgroundImage = `url('${selectedBg}')`; 
+        saveData(); 
+        closeBackgroundModal(); 
+      }
+
+      function handleBgFileSelect(e){ 
+        const file = e.target.files[0]; 
+        if(!file || !file.type.match('image.*')) {
+          showNotification('Seleziona un file immagine valido', 'error');
+          return;
+        } 
+        const reader = new FileReader(); 
+        reader.onload = function(e){ 
+          selectedBg = e.target.result; 
+          showNotification('Immagine caricata. Clicca Applica per confermare.', 'success');
+        };
+        
+        reader.onerror = function() {
+          showNotification('Errore durante il caricamento dell\'immagine', 'error');
+        };
+        
+        reader.readAsDataURL(file); 
+      }
+
+      function handleSearch(){ 
+        const term = document.getElementById('searchInput').value.toLowerCase(); 
+        if(!term){ 
+          document.querySelectorAll('.day-card').forEach(function(c) { c.style.display = 'block'; }); 
+          return; 
+        } 
+        document.querySelectorAll('.day-card').forEach(function(card){ 
+          const day = tripData.days.find(function(d) { return d.id === card.dataset.id; }); 
+          if(!day) return; 
+          let found = false; 
+          if(day.title && day.title.toLowerCase().includes(term)) found = true; 
+          if(day.date && day.date.toLowerCase().includes(term)) found = true; 
+          ['places','accommodation','transport','notes'].forEach(function(type){ 
+            if(day[type].text && day[type].text.toLowerCase().includes(term)) found = true; 
+          }); 
+          card.style.display = found ? 'block' : 'none'; 
+        }); 
+      }
+
+      function resetPlanner(){ 
+        if(confirm('Sei sicuro di voler resettare tutto? Tutti i dati andranno persi.')){ 
+          localStorage.removeItem('oaxacaPlannerData'); 
+          tripData = { days: [], background: tripData.background }; 
+          renderAllDays(); 
+          showNotification('Planner resettato', 'info'); 
+        } 
+      }
+
+      function showNotification(msg, type){ 
+        const notif = document.getElementById('notification'); 
+        const icon = document.getElementById('notificationIcon'); 
+        const text = document.getElementById('notificationText'); 
+        text.textContent = msg; 
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' }; 
+        icon.className = 'fas ' + (icons[type] || 'fa-info-circle'); 
+        notif.className = 'notification show'; 
+        setTimeout(function(){ notif.className = 'notification'; }, 3000); 
+      }
+    });
+  </script>
+</body>
+</html>
