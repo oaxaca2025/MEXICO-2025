@@ -818,43 +818,6 @@
         padding: 15px;
         font-size: 0.8rem;
       }
-      
-      input, select, textarea {
-        font-size: 16px;
-      }
-      
-      .editable:focus {
-        font-size: 16px;
-      }
-      
-      /* CORREZIONE: Nascondi l'input di flatpickr che causa la data duplicata */
-      .flatpickr-input {
-        display: none !important;
-      }
-      
-      .day-date input {
-        display: none !important;
-      }
-    }
-
-    @supports(padding: max(0px)) {
-      .intro-page, .container, .modal {
-        padding-left: max(20px, env(safe-area-inset-left));
-        padding-right: max(20px, env(safe-area-inset-right));
-      }
-      
-      .intro-buttons {
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
-      }
-      
-      body {
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-      }
-      
-      .planner-header, .day-card {
-        padding-left: max(20px, env(safe-area-inset-left));
-        padding-right: max(20px, env(safe-area-inset-right));
-      }
     }
   </style>
 </head>
@@ -941,14 +904,22 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' };
+      // Stato dell'applicazione
+      let tripData = { 
+        days: [], 
+        background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' 
+      };
       let currentAttachmentContext = {};
       let selectedBg = tripData.background;
 
+      // Elementi DOM
       const introPage = document.getElementById('introPage');
       const plannerContainer = document.getElementById('plannerContainer');
       const daysContainer = document.getElementById('daysContainer');
+      const attachmentModal = document.getElementById('attachmentModal');
+      const attachmentFileInput = document.getElementById('attachmentFileInput');
 
+      // Inizializzazione
       initApp();
 
       function initApp(){
@@ -957,19 +928,27 @@
       }
 
       function setupEventListeners(){
+        // Navigazione
         document.getElementById('startBtn').addEventListener('click', showPlanner);
         document.getElementById('bgBtn').addEventListener('click', openBackgroundModal);
         document.getElementById('backgroundBtn').addEventListener('click', openBackgroundModal);
         document.getElementById('homeBtn').addEventListener('click', showIntro);
+        
+        // Gestione giorni
         document.getElementById('addDayBtn').addEventListener('click', addNewDay);
         document.getElementById('saveBtn').addEventListener('click', saveData);
         document.getElementById('resetBtn').addEventListener('click', resetPlanner);
+        
+        // Background
         document.getElementById('cancelBgBtn').addEventListener('click', closeBackgroundModal);
         document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
         document.getElementById('bgFileInput').addEventListener('change', handleBgFileSelect);
+        
+        // ALLEGATI - CORREZIONE PRINCIPALE
         document.getElementById('cancelAttachBtn').addEventListener('click', closeAttachmentModal);
         document.getElementById('confirmAttachBtn').addEventListener('click', handleAttachmentConfirm);
         
+        // Background options
         document.getElementById('bgOptions').addEventListener('click', function(e) {
           const target = e.target.closest('.bg-option');
           if(!target) return;
@@ -978,7 +957,10 @@
           target.classList.add('selected');
         });
 
+        // Search
         document.getElementById('searchInput').addEventListener('input', handleSearch);
+        
+        // Delegazione eventi per i giorni (IMPORTANTE per allegati)
         daysContainer.addEventListener('input', handleDayUpdate);
         daysContainer.addEventListener('click', handleDayActions);
       }
@@ -999,20 +981,17 @@
         const saved = localStorage.getItem('oaxacaPlannerData');
         if(saved){
           try{ 
-            tripData = JSON.parse(saved) || tripData; 
+            tripData = JSON.parse(saved); 
           } catch(e){
             console.error('Errore nel caricamento dei dati:', e);
           }
-          applyBackground(tripData.background, true);
+          applyBackground(tripData.background);
           renderAllDays();
           if (tripData.days && tripData.days.length > 0) {
             showPlanner();
-          } else {
-            showIntro();
           }
         } else {
-          applyBackground(tripData.background, true);
-          showIntro();
+          applyBackground(tripData.background);
         }
       }
 
@@ -1027,6 +1006,7 @@
           daysContainer.appendChild(createDayCard(day, index)); 
         });
         
+        // Inizializza il drag and drop
         if (typeof Sortable !== 'undefined') {
           new Sortable(daysContainer, {
             handle: '.drag-handle', 
@@ -1041,17 +1021,15 @@
         }
       }
 
-      // CORREZIONE COMPLETA: Risolti tutti i problemi
       function createDayCard(day, index){
         const card = document.createElement('div');
         card.className = 'day-card';
         card.dataset.id = day.id;
         
-        // CORREZIONE 1: Mostra sempre "Giorno X" invece di solo "Giorno"
+        // Mostra "Giorno X" invece di solo "Giorno"
         const dayNumber = index + 1;
         const dayTitle = day.title && day.title !== 'Giorno' ? day.title : `Giorno ${dayNumber}`;
         
-        // CORREZIONE 2: Data visualizzata una sola volta
         card.innerHTML = `
           <div class="day-header">
             <div class="day-date-container">
@@ -1073,14 +1051,14 @@
             ${createSection('notes','Note', day)}
           </div>`;
 
-        // CORREZIONE 3: Flatpickr configurato correttamente per evitare data duplicata
+        // Inizializza il datepicker
         const dateEl = card.querySelector('.day-date');
         if (typeof flatpickr !== 'undefined') {
           flatpickr(dateEl, {
             locale: 'it',
             dateFormat: 'd/m/Y',
             defaultDate: parseDate(day.date) || new Date(),
-            static: true, // Evita la creazione di input aggiuntivi
+            static: true,
             onChange: function(selectedDates, dateStr) { 
               day.date = dateStr; 
               card.querySelector('.date-text').textContent = dateStr; 
@@ -1094,6 +1072,7 @@
 
       function createSection(type, title, day){
         if(!day[type]) day[type] = { text:'', attachments:[] };
+        
         const items = day[type].attachments.map(function(att, i) {
           return `
           <div class="attachment-item" data-type="${type}" data-index="${i}">
@@ -1165,6 +1144,7 @@
         const card = target.closest('.day-card'); 
         const day = tripData.days.find(function(d) { return d.id === card.dataset.id; }); 
         if(!day) return; 
+        
         if(target.classList.contains('editable')){ 
           const section = target.closest('.section'); 
           const type = section.classList[1]; 
@@ -1175,34 +1155,43 @@
         saveData(); 
       }
 
+      // CORREZIONE CRITICA: Gestione corretta degli allegati
       function handleDayActions(e){ 
         const target = e.target; 
         const card = target.closest('.day-card'); 
         if(!card) return; 
+        
         const day = tripData.days.find(function(d) { return d.id === card.dataset.id; }); 
         if(!day) return; 
         
+        // Elimina giorno
         if(target.closest('.delete-day')){ 
           if(confirm('Eliminare questo giorno?')){ 
             tripData.days = tripData.days.filter(function(d) { return d.id !== day.id; }); 
             saveData(); 
             renderAllDays(); 
           } 
-        } else if(target.closest('.add-attachment-btn')){ 
+        } 
+        // Aggiungi allegato - CORREZIONE
+        else if(target.closest('.add-attachment-btn')){ 
           const btn = target.closest('.add-attachment-btn'); 
-          const type = btn.dataset.type; 
+          const type = btn.getAttribute('data-type'); 
           openAttachmentModal(day, type); 
-        } else if(target.closest('.delete-attachment-btn')){ 
+        } 
+        // Elimina allegato
+        else if(target.closest('.delete-attachment-btn')){ 
           const btn = target.closest('.delete-attachment-btn'); 
-          const type = btn.dataset.type; 
-          const index = Number(btn.dataset.index); 
+          const type = btn.getAttribute('data-type'); 
+          const index = Number(btn.getAttribute('data-index')); 
           day[type].attachments.splice(index, 1); 
           saveData(); 
           renderAllDays(); 
-        } else if(target.closest('.attachment-item')){ 
+        } 
+        // Visualizza allegato
+        else if(target.closest('.attachment-item')){ 
           const item = target.closest('.attachment-item'); 
-          const index = Number(item.dataset.index); 
-          const type = item.dataset.type; 
+          const type = item.getAttribute('data-type'); 
+          const index = Number(item.getAttribute('data-index')); 
           const att = day[type].attachments[index]; 
           openViewAttachmentModal(att); 
         } 
@@ -1210,18 +1199,20 @@
 
       function openAttachmentModal(day, type){ 
         currentAttachmentContext = { day: day, type: type }; 
-        document.getElementById('attachmentModal').style.display = 'flex'; 
+        attachmentModal.style.display = 'flex'; 
+        // Reset del file input
+        attachmentFileInput.value = '';
       }
 
       function closeAttachmentModal(){ 
-        document.getElementById('attachmentModal').style.display = 'none'; 
-        document.getElementById('attachmentFileInput').value = ''; 
+        attachmentModal.style.display = 'none'; 
         currentAttachmentContext = {}; 
       }
 
-      // CORREZIONE 4: Gestione allegati funzionante
+      // CORREZIONE: Gestione allegati funzionante
       function handleAttachmentConfirm(){ 
         const fileInput = document.getElementById('attachmentFileInput'); 
+        
         if(!fileInput.files.length) {
           showNotification('Seleziona un file prima di confermare', 'error');
           return;
@@ -1229,19 +1220,29 @@
         
         const file = fileInput.files[0]; 
         
+        // Verifica il tipo di file
         if (!file.type.match('image.*') && !file.type.match('application/pdf')) {
           showNotification('Formato file non supportato. Usa immagini o PDF.', 'error');
           return;
         }
         
         const reader = new FileReader(); 
+        
         reader.onload = function(e){ 
           const data = e.target.result; 
+          
+          // Verifica che il contesto sia valido
+          if (!currentAttachmentContext.day || !currentAttachmentContext.type) {
+            showNotification('Errore: contesto allegato non valido', 'error');
+            return;
+          }
+          
           currentAttachmentContext.day[currentAttachmentContext.type].attachments.push({ 
             name: file.name, 
             type: file.type, 
             data: data 
           }); 
+          
           saveData(); 
           renderAllDays(); 
           closeAttachmentModal(); 
