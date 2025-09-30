@@ -23,7 +23,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap');
 
     :root {
-      --bg-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+      --bg-image: url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
     * {
@@ -38,21 +38,18 @@
       line-height: 1.6;
       min-height: 100vh;
       font-family: 'Oswald', sans-serif;
-      position: relative;
     }
 
-    body::before {
-      content: '';
+    #background-layer {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
+      height: 100vh;
       background-image: var(--bg-image);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      background-attachment: fixed;
       z-index: -1;
       transition: background-image .5s ease;
     }
@@ -938,6 +935,7 @@
   </style>
 </head>
 <body>
+  <div id="background-layer"></div>
   <!-- Intro -->
   <div class="intro-page" id="introPage">
     <h1 class="intro-title">OAXACA 2025</h1>
@@ -983,7 +981,7 @@
     <div class="modal-content">
       <h2 class="modal-title">Seleziona Sfondo</h2>
       <div class="bg-options" id="bgOptions">
-        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
@@ -1062,7 +1060,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // ---- State ----
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e-86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
       let currentAttachmentContext = {};
       let selectedBg = tripData.background;
       let onConfirmCallback = null;
