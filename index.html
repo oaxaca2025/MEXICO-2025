@@ -40,7 +40,7 @@
       background-attachment: fixed;
       position: relative;
       transition: background-image .5s ease;
-      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib-rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
     /* Intro */
@@ -687,27 +687,13 @@
       align-items: center;
       z-index: 10000;
       cursor: pointer;
-      overflow: auto; 
       padding: 20px; 
     }
     
     .fullscreen-attachment img {
-      max-width: none;  
-      max-height: none; 
-      flex-shrink: 0; 
+      max-width: 95%;  
+      max-height: 95%;
       object-fit: contain;
-    }
-    
-    .fullscreen-attachment .pdf-container {
-      width: 90%;
-      height: 90%;
-      background: white;
-    }
-    
-    .fullscreen-attachment iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
     }
     
     .close-fullscreen {
@@ -760,10 +746,8 @@
 
     /* iPhone e dispositivi mobili */
     @media (max-width: 768px) {
-      body {
-        background-attachment: scroll;
-      }
-      
+      /* CORREZIONE: Rimosso `background-attachment: scroll;` per mantenere lo sfondo fisso */
+
       .intro-page {
         padding: 10px;
         padding-bottom: 0;
@@ -838,6 +822,13 @@
       .day-date-container {
         width: 100%;
         justify-content: space-between;
+      }
+
+      /* CORREZIONE: Aumentata la dimensione e il peso del font della data per renderla più visibile */
+      .day-date input[data-input] {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #000;
       }
       
       .day-actions {
