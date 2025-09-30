@@ -40,7 +40,7 @@
       background-attachment: fixed;
       position: relative;
       transition: background-image .5s ease;
-      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib-rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?ixlib-rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
     /* Intro */
@@ -826,9 +826,9 @@
 
       /* CORREZIONE: Aumentata la dimensione e il peso del font della data per renderla più visibile */
       .day-date input[data-input] {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         font-weight: 700;
-        color: #000;
+        color: #000 !important;
       }
       
       .day-actions {
@@ -971,7 +971,7 @@
     <div class="modal-content">
       <h2 class="modal-title">Seleziona Sfondo</h2>
       <div class="bg-options" id="bgOptions">
-        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
@@ -1050,7 +1050,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // ---- State ----
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' };
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80' };
       let currentAttachmentContext = {};
       let selectedBg = tripData.background;
       let onConfirmCallback = null;
@@ -1604,5 +1604,4 @@
   </script>
 </body>
 </html>
-
 
