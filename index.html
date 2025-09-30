@@ -10,12 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#ff0000">
   
-  <!-- CORREZIONE: Aggiunto il percorso del repository per GitHub Pages -->
   <link rel="manifest" href="/MEXICO-2025/manifest.json">
 
-  <!-- CORREZIONE: Aggiunto il percorso del repository per le icone -->
-  <link rel="apple-touch-icon" href="/MEXICO-2025/icon-512.jpg">
-  <link rel="icon" type="image/jpeg" href="/MEXICO-2025/icon-192.jpg" sizes="192x192">
+  <!-- CORREZIONE: Cambiato da .jpg a .png per corrispondere ai file caricati -->
+  <link rel="apple-touch-icon" href="/MEXICO-2025/icon-512.png">
+  <link rel="icon" type="image/png" href="/MEXICO-2025/icon-192.png" sizes="192x192">
 
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,7 +41,7 @@
       background-attachment: fixed;
       position: relative;
       transition: background-image .5s ease;
-      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
     /* Intro */
@@ -982,7 +981,7 @@
     <div class="modal-content">
       <h2 class="modal-title">Seleziona Sfondo</h2>
       <div class="bg-options" id="bgOptions">
-        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
@@ -1061,7 +1060,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // ---- State ----
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80' };
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80' };
       let currentAttachmentContext = {};
       let selectedBg = tripData.background;
       let onConfirmCallback = null;
