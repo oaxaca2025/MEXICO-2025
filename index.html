@@ -833,11 +833,13 @@
         justify-content: space-between;
       }
 
-      /* CORREZIONE: Aumentata la dimensione e il peso del font della data per renderla più visibile */
-      .day-date input[data-input] {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #000 !important;
+      /* CORREZIONE FINALE: Stile della data per mobile, più forte */
+      .day-date input.flatpickr-input {
+        font-family: 'Oswald', sans-serif !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
       }
       
       .day-actions {
