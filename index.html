@@ -22,6 +22,10 @@
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap');
 
+    :root {
+      --bg-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -34,13 +38,23 @@
       line-height: 1.6;
       min-height: 100vh;
       font-family: 'Oswald', sans-serif;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: var(--bg-image);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
       background-attachment: fixed;
-      position: relative;
+      z-index: -1;
       transition: background-image .5s ease;
-      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e-86654de?ixlib-rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
     /* Intro */
@@ -746,8 +760,6 @@
 
     /* iPhone e dispositivi mobili */
     @media (max-width: 768px) {
-      /* CORREZIONE: Rimosso `background-attachment: scroll;` per mantenere lo sfondo fisso */
-
       .intro-page {
         padding: 10px;
         padding-bottom: 0;
@@ -1050,7 +1062,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // ---- State ----
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e-86654de?auto=format&fit=crop&w=1500&q=80' };
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e-86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
       let currentAttachmentContext = {};
       let selectedBg = tripData.background;
       let onConfirmCallback = null;
@@ -1185,7 +1197,7 @@
           } catch(e){
             console.error('Errore nel caricamento dei dati:', e);
           }
-          document.body.style.backgroundImage = `url('${tripData.background}')`;
+          document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
           renderAllDays();
           if (tripData.days && tripData.days.length > 0) {
             showPlanner();
@@ -1193,7 +1205,7 @@
             showIntro();
           }
         } else {
-          document.body.style.backgroundImage = `url('${tripData.background}')`;
+          document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
           showIntro();
         }
       }
@@ -1487,7 +1499,7 @@
         }
 
         tripData.background = newBg;
-        document.body.style.backgroundImage = `url('${newBg}')`;
+        document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
         saveData();
         closeBackgroundModal();
       }
