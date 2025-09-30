@@ -63,7 +63,7 @@
       min-height: 100vh;
       padding: 20px;
       text-align: center;
-      padding-bottom: 0;
+      position: relative; /* Aggiunto per posizionare i bottoni in modo assoluto */
     }
     
     .intro-title {
@@ -78,18 +78,22 @@
     }
     
     .intro-buttons {
+      position: absolute; /* Sposta i bottoni in basso */
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       justify-content: center;
       gap: 20px;
       flex-wrap: wrap;
-      padding: 0 20px;
-      margin-bottom: 20px;
+      width: 90%;
+      max-width: 500px;
     }
     
     .start-btn, .bg-btn {
-      background: rgba(255,255,255,.9);
-      color: #000;
-      border: 2px solid #000;
+      background: rgba(0, 0, 0, 0.4); /* Meno bianco, più trasparente e scuro */
+      color: #fff; /* Testo bianco */
+      border: 1px solid #fff; /* Bordo bianco */
       padding: 12px 24px;
       border-radius: 8px;
       cursor: pointer;
@@ -105,10 +109,11 @@
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      backdrop-filter: blur(4px); /* Effetto vetro smerigliato */
     }
     
     .start-btn:hover, .bg-btn:hover {
-      background: rgba(0,0,0,.1);
+      background: rgba(255, 255, 255, 0.2); /* Effetto hover più chiaro */
       transform: translateY(-2px);
     }
 
@@ -758,10 +763,8 @@
     /* iPhone e dispositivi mobili */
     @media (max-width: 768px) {
       .intro-page {
-        padding: 10px;
-        padding-bottom: 0;
-        justify-content: flex-start;
-        padding-top: 20vh;
+        padding: 20px;
+        justify-content: center;
       }
       
       .intro-title {
@@ -774,6 +777,9 @@
         gap: 15px;
         width: 100%;
         max-width: 300px;
+        position: static; /* Ripristina posizione per mobile */
+        transform: none;
+        margin-top: 40px;
       }
       
       .start-btn, .bg-btn {
@@ -833,7 +839,6 @@
         justify-content: space-between;
       }
 
-      /* CORREZIONE FINALE: Stile della data per mobile, più forte */
       .day-date input.flatpickr-input {
         font-family: 'Oswald', sans-serif !important;
         font-size: 1.4rem !important;
