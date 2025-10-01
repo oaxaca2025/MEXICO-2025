@@ -63,7 +63,7 @@
       min-height: 100vh;
       padding: 20px;
       text-align: center;
-      position: relative; /* Aggiunto per posizionare i bottoni in modo assoluto */
+      position: relative;
     }
     
     .intro-title {
@@ -78,7 +78,7 @@
     }
     
     .intro-buttons {
-      position: absolute; /* Sposta i bottoni in basso */
+      position: absolute;
       bottom: 50px;
       left: 50%;
       transform: translateX(-50%);
@@ -91,9 +91,9 @@
     }
     
     .start-btn, .bg-btn {
-      background: rgba(0, 0, 0, 0.4); /* Meno bianco, più trasparente e scuro */
-      color: #fff; /* Testo bianco */
-      border: 1px solid #fff; /* Bordo bianco */
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      border: 1px solid #fff;
       padding: 12px 24px;
       border-radius: 8px;
       cursor: pointer;
@@ -109,11 +109,11 @@
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
-      backdrop-filter: blur(4px); /* Effetto vetro smerigliato */
+      backdrop-filter: blur(4px);
     }
     
     .start-btn:hover, .bg-btn:hover {
-      background: rgba(255, 255, 255, 0.2); /* Effetto hover più chiaro */
+      background: rgba(255, 255, 255, 0.2);
       transform: translateY(-2px);
     }
 
@@ -165,9 +165,9 @@
     }
     
     .add-day-btn, .dropdown-btn {
-      background: transparent;
+      background: rgba(255,255,255,.9);
       color: #000;
-      border: 2px solid #000;
+      border: 1px solid #ddd;
       padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
@@ -762,30 +762,12 @@
 
     /* iPhone e dispositivi mobili */
     @media (max-width: 768px) {
-      .intro-page {
-        padding: 20px;
-        justify-content: center;
-      }
-      
-      .intro-title {
-        margin-bottom: 30px;
-        letter-spacing: 4px;
-      }
-      
       .intro-buttons {
+        position: absolute;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
         flex-direction: column;
-        gap: 15px;
-        width: 100%;
-        max-width: 300px;
-        position: static; /* Ripristina posizione per mobile */
-        transform: none;
-        margin-top: 40px;
-      }
-      
-      .start-btn, .bg-btn {
-        width: 100%;
-        padding: 15px;
-        min-height: 44px;
       }
       
       .day-content {
@@ -1165,9 +1147,22 @@
         });
 
         searchInput.addEventListener('input', handleSearch);
-        daysContainer.addEventListener('input', handleDayUpdate);
+        daysContainer.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('editable')) {
+                autolinkUrls(e.target);
+                handleDayUpdate(e);
+            }
+        }, true);
         daysContainer.addEventListener('click', (e) => {
-          if (e.target.tagName === 'A' || e.target.closest('a')) e.preventDefault();
+          const link = e.target.closest('a');
+          if (link && link.href && e.target.closest('.editable')) {
+              e.preventDefault();
+              window.open(link.href, '_blank');
+              return;
+          }
+          if (link) {
+              e.preventDefault();
+          }
           handleDayActions(e);
         });
         
@@ -1352,6 +1347,20 @@
 
       function formatDate(d){ 
         return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
+      }
+
+      function autolinkUrls(element) {
+        let html = element.innerHTML;
+        const urlRegex = /(?![^<]*>|[^>]*<\/(a|button)>)(https?:\/\/[^\s<]+|[a-zA-Z0-9._-]+\.[a-zA-Z]{2,63}[^\s<]*)/g;
+        
+        html = html.replace(urlRegex, (url) => {
+            let href = url;
+            if (!href.startsWith('http')) {
+                href = 'http://' + href;
+            }
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+        element.innerHTML = html;
       }
 
       function handleDayUpdate(e){ 
