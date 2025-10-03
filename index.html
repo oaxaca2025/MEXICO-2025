@@ -732,41 +732,58 @@
 
     /* Print */
     @media print {
-      body {
-        background-image: none !important;
-        color: #000;
+      * {
+        color: #000 !important;
+        background-color: #fff !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
       }
       
-      .intro-page, .planner-header, .add-day-btn, .dropdown, .day-actions, .add-attachment-btn, footer {
+      #background-layer, .intro-page, .planner-header .header-right-section, .day-actions, .add-attachment-btn, footer, .notification, .modal {
         display: none !important;
+      }
+      
+      body {
+        font-family: 'Times New Roman', serif;
       }
       
       .container {
         display: block !important;
-        max-width: 100%;
-        padding: 0;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .day-card {
+        border: 1px solid #ccc !important;
+        padding: 15px !important;
+        margin-bottom: 20px;
+        break-inside: avoid;
+      }
+
+      .day-content {
+        display: block !important;
       }
       
-      .day-card, .section {
-        break-inside: avoid;
-        box-shadow: none;
-        border: 1px solid #ddd;
-        background: #fff;
-        margin-bottom: 20px;
+      .section {
+         border: 1px solid #eee !important;
+         padding: 10px;
+         margin-bottom: 10px;
+         break-inside: avoid;
+      }
+
+      .editable a {
+        text-decoration: underline !important;
       }
       
       .file-attachments {
-        display: none;
+        display: none !important;
       }
     }
 
     /* iPhone e dispositivi mobili */
     @media (max-width: 768px) {
       .intro-buttons {
-        position: absolute;
-        bottom: 50px;
-        left: 50%;
-        transform: translateX(-50%);
         flex-direction: column;
       }
       
@@ -1150,9 +1167,14 @@
         daysContainer.addEventListener('blur', (e) => {
             if (e.target.classList.contains('editable')) {
                 autolinkUrls(e.target);
-                handleDayUpdate(e);
+                // Create a synthetic input event to trigger handleDayUpdate
+                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+                e.target.dispatchEvent(inputEvent);
             }
         }, true);
+
+        daysContainer.addEventListener('input', handleDayUpdate);
+
         daysContainer.addEventListener('click', (e) => {
           const link = e.target.closest('a');
           if (link && link.href && e.target.closest('.editable')) {
@@ -1160,7 +1182,7 @@
               window.open(link.href, '_blank');
               return;
           }
-          if (link) {
+          if (link && !e.target.closest('.dropdown-content')) {
               e.preventDefault();
           }
           handleDayActions(e);
@@ -1358,7 +1380,7 @@
             if (!href.startsWith('http')) {
                 href = 'http://' + href;
             }
-            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            return `<a href="${href}" rel="noopener noreferrer">${url}</a>`;
         });
         element.innerHTML = html;
       }
@@ -1564,12 +1586,14 @@
       }
 
       function exportToJson(){ 
-        const dataStr = JSON.stringify(tripData, null, 2); 
-        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+        const dataStr = JSON.stringify(tripData); 
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
         const linkElement = document.createElement('a'); 
-        linkElement.href = dataUri; 
+        linkElement.href = url; 
         linkElement.download = 'oaxaca_planner.json'; 
         linkElement.click(); 
+        URL.revokeObjectURL(url);
         exportModal.style.display = 'none'; 
       }
 
