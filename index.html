@@ -1066,11 +1066,12 @@
         daysContainer.addEventListener('input', handleDataChange);
         daysContainer.addEventListener('click', handleDayActions);
         
-        // Before Unload Event
+        // 🔥 AVVISO DI CHIUSURA - MODIFICA AGGIUNTA
         window.addEventListener('beforeunload', (e) => {
             if (unsavedChanges) {
                 e.preventDefault();
-                e.returnValue = '';
+                e.returnValue = 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
+                return 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
             }
         });
       }
@@ -1088,6 +1089,9 @@
             } else if (target.classList.contains('day-title')) {
                 day.title = target.value;
             }
+            
+            // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+            unsavedChanges = true;
             saveDataToLocalStorage();
       }
 
@@ -1130,7 +1134,8 @@
       function saveDataToLocalStorage(forceNotification = false){
         try {
           localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
-          unsavedChanges = true;
+          // 🔥 RESETTA IL FLAG QUANDO I DATI VENGONO SALVATI
+          unsavedChanges = false;
           if(forceNotification) {
               showNotification('Modifiche salvate nella cache del browser!', 'success');
           }
@@ -1178,6 +1183,8 @@
             defaultDate: parseDate(day.date),
             onChange: (selectedDates, dateStr) => { 
               day.date = dateStr;
+              // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+              unsavedChanges = true;
               saveDataToLocalStorage(); 
             }
         });
@@ -1221,6 +1228,8 @@
           notes: {text: '', attachments: []}
         };
         tripData.days.push(newDay); 
+        // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+        unsavedChanges = true;
         saveDataToLocalStorage(true);
         renderAllDays(); 
       }
@@ -1269,6 +1278,8 @@
             if (button.classList.contains('delete-day')) { 
                 showConfirmModal('Eliminare Giorno?', `Sei sicuro di voler eliminare "${day.title}"?`, () => {
                     tripData.days = tripData.days.filter(d => d.id !== day.id);
+                    // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+                    unsavedChanges = true;
                     saveDataToLocalStorage(true);
                     renderAllDays();
                 });
@@ -1280,6 +1291,8 @@
                 const index = parseInt(attachmentItem.dataset.index);
                 const section = day[attachmentItem.closest('.section').classList[1]];
                 section.attachments.splice(index, 1);
+                // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+                unsavedChanges = true;
                 saveDataToLocalStorage(true);
                 renderAllDays();
             }
@@ -1313,6 +1326,8 @@
             type: file.type, 
             data: e.target.result 
           }); 
+          // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+          unsavedChanges = true;
           saveDataToLocalStorage(true); 
           renderAllDays(); 
           closeModal('attachmentModal');
@@ -1388,6 +1403,7 @@
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
               showNotification('Backup salvato!', 'success');
+              // 🔥 RESETTA IL FLAG DOPO L'ESPORT
               unsavedChanges = false;
           } catch(e) {
               showNotification('Esportazione fallita. Memoria insufficiente?', 'error');
@@ -1452,6 +1468,8 @@
 
       function updateBg(newBg) {
         tripData.background = newBg;
+        // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
+        unsavedChanges = true;
         saveDataToLocalStorage();
         document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
         closeModal('backgroundModal');
@@ -1462,9 +1480,6 @@
   </script>
 </body>
 </html>
-
-
-
 
 
 
