@@ -1236,7 +1236,7 @@
       }
 
       function autolinkUrls(element) {
-        if (element.innerHTML.includes('<a href')) return;
+        if (element.querySelector('a')) return;
 
         const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,!?"')\];])/g;
         let html = element.innerHTML;
@@ -1462,6 +1462,7 @@
   </script>
 </body>
 </html>
+
 
 
 
