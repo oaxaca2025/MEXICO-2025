@@ -936,7 +936,6 @@
         </div>
       </div>
     </div>
-    <div id="storage-status">Caricamento...</div>
 
     <div class="days-container" id="daysContainer"></div>
 
@@ -1010,15 +1009,13 @@
       const introPage = document.getElementById('introPage');
       const plannerContainer = document.getElementById('plannerContainer');
       const daysContainer = document.getElementById('daysContainer');
-      const storageStatus = document.getElementById('storage-status');
 
       function initApp(){
         loadFromLocalStorage();
         setupEventListeners();
-        updateStorageStatus();
         
         setTimeout(() => {
-            showConfirmModal('Carica Backup?', 'Vuoi caricare l\'ultimo backup da un file?', () => {
+            showConfirmModal('Carica Backup?', 'Vuoi caricare un backup da un file?', () => {
                 document.getElementById('importFileInput').click();
             });
         }, 1000);
@@ -1128,7 +1125,6 @@
         } else {
           showIntro();
         }
-        updateStorageStatus();
       }
 
       function saveDataToLocalStorage(forceNotification = false){
@@ -1136,9 +1132,8 @@
           localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
           unsavedChanges = true;
           if(forceNotification) {
-              showNotification('Planner salvato nella cache del browser!', 'success');
+              showNotification('Modifiche salvate nella cache del browser!', 'success');
           }
-          updateStorageStatus();
         } catch (e) {
           showNotification('Cache del browser piena! Usa "Salva Backup" per salvare su file.', 'error');
         }
@@ -1365,17 +1360,14 @@
       }
 
       function updateStorageStatus() {
-          const dataString = JSON.stringify(tripData);
-          const sizeInBytes = new Blob([dataString]).size;
-          const sizeInKB = (sizeInBytes / 1024).toFixed(1);
-          const maxSizeMB = 5;
-          const percentage = ((sizeInBytes / (maxSizeMB * 1024 * 1024)) * 100).toFixed(1);
-          
-          storageStatus.textContent = `Spazio Cache: ${sizeInKB} KB (${percentage}%)`;
-          if (percentage > 80) {
-              storageStatus.classList.add('warning');
-          } else {
-              storageStatus.classList.remove('warning');
+          try {
+            const dataString = JSON.stringify(tripData);
+            const sizeInBytes = new Blob([dataString]).size;
+            if(document.getElementById('storage-status')) { // Check if element exists
+                document.getElementById('storage-status').style.display = 'none';
+            }
+          } catch(e) {
+            // Ignore if it fails, not critical
           }
       }
       
@@ -1472,4 +1464,6 @@
   </script>
 </body>
 </html>
+
+
 
