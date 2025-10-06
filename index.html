@@ -130,7 +130,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       padding: 15px 20px;
       border-radius: 10px;
       flex-wrap: wrap;
@@ -944,7 +944,7 @@
             <div class="dropdown-content" role="menu">
               <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva Backup</a>
               <a href="#" id="importBtn"><i class="fas fa-upload"></i> Importa Backup</a>
-              <a href="#" id="exportBtn"><i class="fas fa-print"></i> Stampa</a>
+              <a href="#" id="printBtn"><i class="fas fa-print"></i> Stampa</a>
               <a href="#" id="resetBtn"><i class="fas fa-trash"></i> Reset Planner</a>
               <a href="#" id="backgroundBtn"><i class="fas fa-image"></i> Sfondo</a>
               <a href="#" id="homeBtn"><i class="fas fa-home"></i> Home</a>
@@ -1019,35 +1019,20 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // ---- State ----
       let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
       let currentAttachmentContext = {};
       let onConfirmCallback = null;
-      let editCount = 0;
-      const AUTOSAVE_THRESHOLD = 5;
+      let unsavedChanges = false;
 
-      // ---- Elements ----
       const introPage = document.getElementById('introPage');
       const plannerContainer = document.getElementById('plannerContainer');
       const daysContainer = document.getElementById('daysContainer');
       const storageStatus = document.getElementById('storage-status');
 
-      // ---- Init ----
-      initApp();
-
-      async function initApp(){
+      function initApp(){
         loadFromLocalStorage();
         setupEventListeners();
         updateStorageStatus();
-
-        if ('showOpenFilePicker' in window) {
-            // This is a progressive enhancement for desktop, doesn't block main flow
-            setTimeout(() => {
-                if(confirm("Vuoi caricare l'ultimo backup da un file?")) {
-                    handleImport(null, true); // True for picker
-                }
-            }, 1000);
-        }
       }
 
       function setupEventListeners(){
@@ -1059,12 +1044,12 @@
         
         document.getElementById('saveBtn').addEventListener('click', () => exportToJson(false));
         document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
-        document.getElementById('importFileInput').addEventListener('change', (e) => handleImport(e, false)); // False for input
-        document.getElementById('exportBtn').addEventListener('click', () => window.print());
+        document.getElementById('importFileInput').addEventListener('change', handleImport);
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
         document.getElementById('resetBtn').addEventListener('click', resetPlanner);
 
         // Modal Buttons
-        document.querySelectorAll('.modal-btn[id^="cancel"]').forEach(btn => {
+        document.querySelectorAll('.modal .modal-btn[id^="cancel"]').forEach(btn => {
             btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
         });
         document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
@@ -1094,6 +1079,14 @@
         }, true);
         daysContainer.addEventListener('input', handleDataChange);
         daysContainer.addEventListener('click', handleDayActions);
+        
+        // Before Unload Event
+        window.addEventListener('beforeunload', (e) => {
+            if (unsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
       }
       
       function handleDataChange(e) {
@@ -1109,7 +1102,7 @@
             } else if (target.classList.contains('day-title')) {
                 day.title = target.value;
             }
-            autoSave();
+            saveDataToLocalStorage();
       }
 
       function showPlanner(){ 
@@ -1127,11 +1120,12 @@
         if(saved){
           try { 
             const parsedData = JSON.parse(saved);
-            if(parsedData && parsedData.days) {
+            if(parsedData && Array.isArray(parsedData.days)) {
               tripData = parsedData;
             }
           } catch(e){
             console.error('Errore nel caricamento dei dati da localStorage:', e);
+            showNotification('Backup nella cache corrotto. Importane uno.', 'error');
           }
         }
         updateUI();
@@ -1148,20 +1142,10 @@
         updateStorageStatus();
       }
 
-      function autoSave() {
-          saveDataToLocalStorage();
-          editCount++;
-          if(editCount >= AUTOSAVE_THRESHOLD) {
-              if ('showSaveFilePicker' in window) {
-                  exportToJson(true); // silent export on desktop
-              }
-              editCount = 0;
-          }
-      }
-
       function saveDataToLocalStorage(forceNotification = false){
         try {
           localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
+          unsavedChanges = true;
           if(forceNotification) {
               showNotification('Planner salvato nella cache del browser!', 'success');
           }
@@ -1193,7 +1177,6 @@
               <input type="text" class="day-title" value="${displayTitle}" placeholder="Titolo giorno" />
             </div>
             <div class="day-actions">
-              <button class="drag-handle" title="Trascina"><i class="fas fa-grip-vertical"></i></button>
               <button class="delete-day" title="Elimina"><i class="fas fa-trash"></i></button>
             </div>
           </div>
@@ -1211,7 +1194,7 @@
             defaultDate: parseDate(day.date),
             onChange: (selectedDates, dateStr) => { 
               day.date = dateStr;
-              autoSave(); 
+              saveDataToLocalStorage(); 
             }
         });
         
@@ -1254,7 +1237,7 @@
           notes: {text: '', attachments: []}
         };
         tripData.days.push(newDay); 
-        autoSave();
+        saveDataToLocalStorage(true);
         renderAllDays(); 
       }
 
@@ -1269,16 +1252,12 @@
       }
 
       function autolinkUrls(element) {
+        if (element.innerHTML.includes('<a href')) return;
+
+        const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,!?"')\];])/g;
         let html = element.innerHTML;
-        const urlRegex = /(?![^<]*>|[^>]*<\/(a|button)>)(https?:\/\/[^\s<]+|[a-zA-Z0-9._-]+\.[a-zA-Z]{2,63}[^\s<]*)/g;
         
-        html = html.replace(urlRegex, (url) => {
-            let href = url;
-            if (!href.startsWith('http')) {
-                href = 'http://' + href;
-            }
-            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-        });
+        html = html.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
         
         if (html !== element.innerHTML) {
             element.innerHTML = html;
@@ -1293,13 +1272,13 @@
         if (button) {
             const dayCard = button.closest('.day-card');
             if (!dayCard) return;
-
             const day = tripData.days.find(d => d.id === dayCard.dataset.id);
+            if (!day) return;
 
             if (button.classList.contains('delete-day')) { 
-                showConfirmModal('Eliminare Giorno?', 'Questa azione è irreversibile.', () => {
+                showConfirmModal('Eliminare Giorno?', `Sei sicuro di voler eliminare "${day.title}"?`, () => {
                     tripData.days = tripData.days.filter(d => d.id !== day.id);
-                    autoSave();
+                    saveDataToLocalStorage(true);
                     renderAllDays();
                 });
             } else if (button.classList.contains('add-attachment-btn')) { 
@@ -1310,11 +1289,12 @@
                 const index = parseInt(attachmentItem.dataset.index);
                 const section = day[attachmentItem.closest('.section').classList[1]];
                 section.attachments.splice(index, 1);
-                autoSave();
+                saveDataToLocalStorage(true);
                 renderAllDays();
             }
         } else if (item) {
              const dayCard = item.closest('.day-card');
+             if(!dayCard) return;
              const day = tripData.days.find(d => d.id === dayCard.dataset.id);
              const index = parseInt(item.dataset.index);
              const sectionType = item.closest('.section').classList[1];
@@ -1342,7 +1322,7 @@
             type: file.type, 
             data: e.target.result 
           }); 
-          autoSave(); 
+          saveDataToLocalStorage(true); 
           renderAllDays(); 
           closeModal('attachmentModal');
         }; 
@@ -1418,105 +1398,91 @@
         });
       }
 
-      async function exportToJson(silent = false) {
-        // Fallback for browsers that don't support showSaveFilePicker (like mobile)
-        if (!('showSaveFilePicker' in window)) {
-            const dataStr = JSON.stringify(tripData);
-            const blob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            if(!silent) showNotification('Backup scaricato!', 'success');
-            return;
-        }
-
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`,
-                types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }]
-            });
-            const writable = await handle.createWritable();
-            await writable.write(JSON.stringify(tripData));
-            await writable.close();
-            if(!silent) showNotification('Backup salvato con successo!', 'success');
-        } catch (err) {
-            if (err.name !== 'AbortError' && !silent) {
-                showNotification('Salvataggio annullato.', 'info');
-            }
-        }
+      function exportToJson() {
+          try {
+              const dataStr = JSON.stringify(tripData);
+              const blob = new Blob([dataStr], {type: "application/json"});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              showNotification('Backup salvato!', 'success');
+              unsavedChanges = false;
+          } catch(e) {
+              showNotification('Esportazione fallita. Memoria insufficiente?', 'error');
+          }
       }
 
-      async function handleImport(e, usePicker = false) {
-        let file;
-        try {
-            if(usePicker) {
-                const [fileHandle] = await window.showOpenFilePicker({
-                    types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }],
-                });
-                file = await fileHandle.getFile();
-            } else {
-                file = e.target.files[0];
-            }
-
-            if (!file) return;
-
-            const contents = await file.text();
-            const importedData = JSON.parse(contents);
-
-            if (importedData && importedData.days) {
-                showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
-                    tripData = importedData;
-                    saveDataToLocalStorage(true);
-                    updateUI();
-                });
-            } else throw new Error('Invalid file format');
-        } catch(err) {
-            if (err.name !== 'AbortError') {
-                showNotification('File di backup non valido o caricamento annullato.', 'error');
-                console.error(err);
-            }
+      function handleImport(e) {
+        if (!e.target.files || e.target.files.length === 0) {
+            showNotification('Nessun file selezionato.', 'info');
+            return;
         }
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                if (importedData && Array.isArray(importedData.days)) {
+                    showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
+                        tripData = importedData;
+                        saveDataToLocalStorage(true);
+                        updateUI();
+                        unsavedChanges = false;
+                    });
+                } else {
+                    throw new Error('Formato file non valido');
+                }
+            } catch {
+                showNotification('File di backup non valido o corrotto.', 'error');
+            } finally {
+                e.target.value = ''; // Reset input
+            }
+        };
+        reader.onerror = () => {
+            showNotification('Errore nella lettura del file.', 'error');
+        };
+        reader.readAsText(file);
       }
       
       function applyBackground() {
           let newBg;
           const selectedOption = document.querySelector('.bg-option.selected');
           const customUrl = document.getElementById('customBgInput').value.trim();
+          const fileInput = document.getElementById('bgFileInput');
 
-          if(customUrl) newBg = customUrl;
-          else if(selectedOption) newBg = selectedOption.dataset.bg;
-          
-          if(newBg) {
-              tripData.background = newBg;
-              autoSave();
-              document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
-              closeModal('backgroundModal');
+          if(customUrl) {
+              newBg = customUrl;
+              updateBg(newBg);
+          } else if (selectedOption) {
+              newBg = selectedOption.dataset.bg;
+              updateBg(newBg);
+          } else if (fileInput.files[0]) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  newBg = e.target.result;
+                  updateBg(newBg);
+              };
+              reader.readAsDataURL(fileInput.files[0]);
+          } else {
+              showNotification('Nessuno sfondo selezionato.', 'error');
           }
       }
 
-      function handleBgFileSelect(e){ 
-        const file = e.target.files[0]; 
-        if(!file) return;
-        
-        document.getElementById('customBgInput').value = '';
-        document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-
-        const reader = new FileReader(); 
-        reader.onload = (e) => { 
-            tripData.background = e.target.result;
-            autoSave();
-            document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
-            closeModal('backgroundModal');
-        };
-        reader.readAsDataURL(file); 
+      function updateBg(newBg) {
+        tripData.background = newBg;
+        saveDataToLocalStorage();
+        document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
+        closeModal('backgroundModal');
       }
 
+      initApp();
     });
   </script>
 </body>
 </html>
+
 
 
