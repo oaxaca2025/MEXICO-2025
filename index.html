@@ -4,11 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>OAXACA 2025 - Planner</title>
+
+  <!-- Meta per Web App e Icone -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ff0000">
+  
+  <link rel="manifest" href="/MEXICO-2025/manifest.json">
+  <link rel="apple-touch-icon" href="/MEXICO-2025/icon-512.png">
+  <link rel="icon" type="image/png" href="/MEXICO-2025/icon-192.png" sizes="192x192">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-image: url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+    }
 
     * {
       margin: 0;
@@ -22,15 +36,23 @@
       line-height: 1.6;
       min-height: 100vh;
       font-family: 'Oswald', sans-serif;
+    }
+
+    #background-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-image: var(--bg-image);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      background-attachment: fixed;
-      position: relative;
+      z-index: -1;
       transition: background-image .5s ease;
-      background-image: url('https://images.unsplash.com/photo-1518638150340-f706e86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
     }
 
+    /* Intro */
     .intro-page {
       display: flex;
       flex-direction: column;
@@ -39,7 +61,7 @@
       min-height: 100vh;
       padding: 20px;
       text-align: center;
-      padding-bottom: 0;
+      position: relative;
     }
     
     .intro-title {
@@ -54,18 +76,22 @@
     }
     
     .intro-buttons {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       justify-content: center;
       gap: 20px;
       flex-wrap: wrap;
-      padding: 0 20px;
-      margin-bottom: 20px;
+      width: 90%;
+      max-width: 500px;
     }
     
     .start-btn, .bg-btn {
-      background: rgba(255,255,255,.9);
-      color: #000;
-      border: 2px solid #000;
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      border: 1px solid #fff;
       padding: 12px 24px;
       border-radius: 8px;
       cursor: pointer;
@@ -81,13 +107,15 @@
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      backdrop-filter: blur(4px);
     }
     
     .start-btn:hover, .bg-btn:hover {
-      background: rgba(0,0,0,.1);
+      background: rgba(255, 255, 255, 0.2);
       transform: translateY(-2px);
     }
 
+    /* App */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -135,9 +163,9 @@
     }
     
     .add-day-btn, .dropdown-btn {
-      background: transparent;
+      background: rgba(255,255,255,.9);
       color: #000;
-      border: 2px solid #000;
+      border: 1px solid #ddd;
       padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
@@ -155,29 +183,7 @@
       transform: translateY(-2px);
     }
 
-    .search-container {
-      position: relative;
-      width: 100%;
-    }
-    
-    .search-input {
-      padding: 8px 35px 8px 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-family: 'Oswald', sans-serif;
-      width: 100%;
-      font-size: .9rem;
-      background: rgba(255,255,255,.8);
-    }
-    
-    .search-icon {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #777;
-    }
-
+    /* Dropdown */
     .dropdown {
       position: relative;
       display: inline-block;
@@ -188,7 +194,7 @@
       position: absolute;
       right: 0;
       background: #fff;
-      min-width: 200px;
+      min-width: 180px;
       box-shadow: 0 8px 16px rgba(0,0,0,.2);
       z-index: 10000;
       border-radius: 8px;
@@ -197,7 +203,7 @@
     }
     
     .dropdown-content a {
-      color: 000;
+      color: #000;
       padding: 12px 16px;
       text-decoration: none;
       display: flex;
@@ -238,11 +244,6 @@
       box-shadow: 0 10px 25px rgba(0,0,0,.15);
     }
     
-    .day-card.dragging {
-      opacity: .7;
-      transform: rotate(5deg);
-    }
-    
     .day-header {
       display: flex;
       justify-content: space-between;
@@ -259,22 +260,38 @@
     }
     
     .day-date {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #000;
-      cursor: pointer;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 10px;
       padding: 8px 12px;
       border-radius: 8px;
       transition: all .3s;
       border: 1px dashed transparent;
+      cursor: pointer;
     }
     
     .day-date:hover {
       background: rgba(0,0,0,.05);
+    }
+
+    .day-date input[data-input] {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000;
+        background: transparent;
+        border: none;
+        padding: 0;
+        width: 110px; 
+        cursor: pointer;
+    }
+
+    .day-date input[data-input]:focus {
+        outline: none;
+    }
+
+    .day-date .fa-calendar[data-toggle] {
+        cursor: pointer;
     }
     
     .day-title {
@@ -343,21 +360,10 @@
       transform: translateY(-3px);
     }
     
-    .section.places {
-      background: rgba(173,216,230,.8);
-    }
-    
-    .section.accommodation {
-      background: rgba(255,182,193,.8);
-    }
-    
-    .section.transport {
-      background: rgba(144,238,144,.8);
-    }
-    
-    .section.notes {
-      background: rgba(255,255,153,.8);
-    }
+    .section.places { background: rgba(173,216,230,.8); }
+    .section.accommodation { background: rgba(255,182,193,.8); }
+    .section.transport { background: rgba(144,238,144,.8); }
+    .section.notes { background: rgba(255,255,153,.8); }
     
     .section-title {
       font-family: 'Special Elite', cursive;
@@ -388,14 +394,10 @@
       resize: vertical;
       font-family: 'Oswald', sans-serif;
     }
-    
+
     .editable a {
-      color: #0066cc;
-      text-decoration: underline;
-    }
-    
-    .editable a:hover {
-      color: #004499;
+        color: #0066cc;
+        text-decoration: underline;
     }
 
     .file-attachments {
@@ -435,10 +437,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 30px; 
       color: #7F8C8D;
     }
     
+    .attachment-thumbnail .fa-file-pdf {
+      color: #e74c3c; 
+      font-size: 36px;
+    }
+
     .attachment-thumbnail img {
       width: 100%;
       height: 100%;
@@ -491,22 +498,25 @@
     .add-attachment-btn:hover {
       color: #2980B9;
     }
-    
-    .storage-warning {
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      border-radius: 6px;
-      padding: 10px;
-      margin: 10px 0;
-      font-size: 0.8rem;
-      color: #856404;
-      display: none;
+
+    #storage-status {
+        font-size: 0.8rem;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(0,0,0,0.1);
     }
-    
-    .storage-warning.show {
-      display: block;
+    #storage-status.warning {
+        background: #fff3cd;
+        color: #856404;
+        border-color: #ffeeba;
     }
 
+
+    /* Modals */
     .modal {
       display: none;
       position: fixed;
@@ -638,6 +648,7 @@
       text-shadow: 1px 1px 2px #000;
     }
 
+    /* Notification */
     .notification {
       position: fixed;
       bottom: 20px;
@@ -673,10 +684,11 @@
       align-items: center;
       z-index: 10000;
       cursor: pointer;
+      padding: 20px; 
     }
     
     .fullscreen-attachment img {
-      max-width: 95%;
+      max-width: 95%;  
       max-height: 95%;
       object-fit: contain;
     }
@@ -699,34 +711,61 @@
       z-index: 10001;
     }
 
-    @media (max-width: 768px) {
+    /* Print */
+    @media print {
+      * {
+        color: #000 !important;
+        background-color: #fff !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      
+      #background-layer, .intro-page, .planner-header .header-right-section, .day-actions, .add-attachment-btn, footer, .notification, .modal, #storage-status {
+        display: none !important;
+      }
+      
       body {
-        background-attachment: scroll;
+        font-family: 'Times New Roman', serif;
       }
       
-      .intro-page {
-        padding: 10px;
-        padding-bottom: 0;
-        justify-content: flex-start;
-        padding-top: 20vh;
+      .container {
+        display: block !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .day-card {
+        border: 1px solid #ccc !important;
+        padding: 15px !important;
+        margin-bottom: 20px;
+        break-inside: avoid;
+      }
+
+      .day-content {
+        display: block !important;
       }
       
-      .intro-title {
-        margin-bottom: 30px;
-        letter-spacing: 4px;
+      .section {
+         border: 1px solid #eee !important;
+         padding: 10px;
+         margin-bottom: 10px;
+         break-inside: avoid;
+      }
+
+      .editable a {
+        text-decoration: underline !important;
       }
       
+      .file-attachments {
+        display: none !important;
+      }
+    }
+
+    /* iPhone e dispositivi mobili */
+    @media (max-width: 768px) {
       .intro-buttons {
         flex-direction: column;
-        gap: 15px;
-        width: 100%;
-        max-width: 300px;
-      }
-      
-      .start-btn, .bg-btn {
-        width: 100%;
-        padding: 15px;
-        min-height: 44px;
       }
       
       .day-content {
@@ -778,6 +817,14 @@
       .day-date-container {
         width: 100%;
         justify-content: space-between;
+      }
+
+      .day-date input.flatpickr-input {
+        font-family: 'Oswald', sans-serif !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
       }
       
       .day-actions {
@@ -841,10 +888,42 @@
         padding: 15px;
         font-size: 0.8rem;
       }
+      
+      input, select, textarea {
+        font-size: 16px;
+      }
+      
+      .editable:focus {
+        font-size: 16px;
+      }
+      
+    }
+
+    /* Supporto per notch e aree sicure iPhone */
+    @supports(padding: max(0px)) {
+      .intro-page, .container, .modal {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+      
+      .intro-buttons {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+      
+      body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      
+      .planner-header, .day-card {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
     }
   </style>
 </head>
 <body>
+  <div id="background-layer"></div>
+  <!-- Intro -->
   <div class="intro-page" id="introPage">
     <h1 class="intro-title">OAXACA 2025</h1>
     <div class="intro-buttons">
@@ -853,65 +932,40 @@
     </div>
   </div>
 
+  <!-- App -->
   <div class="container" id="plannerContainer">
     <div class="planner-header">
-      <h1 class="planner-title">OAXACA 2025</h1>
+      <h1 class="planner-title" id="dynamicTitle">OAXACA 2025</h1>
       <div class="header-right-section">
         <div class="header-buttons">
           <button class="add-day-btn" id="addDayBtn"><i class="fas fa-plus"></i> Aggiungi Giorno</button>
           <div class="dropdown">
-            <button class="dropdown-btn"><i class="fas fa-ellipsis-v"></i></button>
-            <div class="dropdown-content">
-              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva</a>
-              <a href="#" id="exportBtn"><i class="fas fa-download"></i> Esporta Backup</a>
+            <button class="dropdown-btn" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
+            <div class="dropdown-content" role="menu">
+              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva Backup</a>
               <a href="#" id="importBtn"><i class="fas fa-upload"></i> Importa Backup</a>
+              <a href="#" id="exportBtn"><i class="fas fa-print"></i> Stampa</a>
               <a href="#" id="resetBtn"><i class="fas fa-trash"></i> Reset Planner</a>
               <a href="#" id="backgroundBtn"><i class="fas fa-image"></i> Sfondo</a>
               <a href="#" id="homeBtn"><i class="fas fa-home"></i> Home</a>
             </div>
           </div>
         </div>
-        <div class="search-container">
-          <input type="text" class="search-input" id="searchInput" placeholder="Cerca..." />
-          <i class="fas fa-search search-icon"></i>
-        </div>
       </div>
     </div>
-
-    <div class="storage-warning" id="storageWarning">
-      <i class="fas fa-exclamation-triangle"></i>
-      <span id="storageWarningText">Attenzione: spazio di archiviazione quasi esaurito</span>
-    </div>
+    <div id="storage-status">Caricamento...</div>
 
     <div class="days-container" id="daysContainer"></div>
 
-    <footer><p>OAXACA 2025 &copy; - Dati salvati nel browser • Usa "Esporta/Importa Backup" per sincronizzare dispositivi</p></footer>
+    <footer><p>OAXACA 2025 &copy; - Dati salvati nel browser</p></footer>
   </div>
 
-  <div class="modal" id="attachmentModal">
-    <div class="modal-content">
-      <h2 class="modal-title">Aggiungi Allegato</h2>
-      <div class="file-input-container">
-        <label for="attachmentFileInput" class="file-input-label">
-          <i class="fas fa-upload"></i> Carica file (Immagine/PDF)
-        </label>
-        <input type="file" id="attachmentFileInput" class="file-input" accept="image/*,.pdf" />
-        <div class="storage-info" style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-          Limiti: Immagini max 2MB, PDF max 3MB
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="modal-btn" id="cancelAttachBtn">Annulla</button>
-        <button class="modal-btn primary" id="confirmAttachBtn">Aggiungi</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- Modals -->
   <div class="modal" id="backgroundModal">
     <div class="modal-content">
       <h2 class="modal-title">Seleziona Sfondo</h2>
       <div class="bg-options" id="bgOptions">
-        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
         <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
@@ -928,18 +982,27 @@
     </div>
   </div>
 
-  <div class="modal" id="importModal">
+  <div class="modal" id="attachmentModal">
     <div class="modal-content">
-      <h2 class="modal-title">Importa Backup</h2>
+      <h2 class="modal-title">Aggiungi Allegato</h2>
       <div class="file-input-container">
-        <label for="importFileInput" class="file-input-label">
-          <i class="fas fa-upload"></i> Seleziona file di backup (.json)
-        </label>
-        <input type="file" id="importFileInput" class="file-input" accept=".json" />
+        <label for="attachmentFileInput" class="file-input-label"><i class="fas fa-upload"></i> Carica file (Immagine/PDF)</label>
+        <input type="file" id="attachmentFileInput" class="file-input" accept="image/*,.pdf" />
       </div>
       <div class="modal-buttons">
-        <button class="modal-btn" id="cancelImportBtn">Annulla</button>
-        <button class="modal-btn primary" id="confirmImportBtn">Importa</button>
+        <button class="modal-btn" id="cancelAttachBtn">Annulla</button>
+        <button class="modal-btn primary" id="confirmAttachBtn">Aggiungi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmModal">
+    <div class="modal-content">
+      <h2 class="modal-title" id="confirmModalTitle"></h2>
+      <p id="confirmModalText" style="text-align: center; margin-bottom: 20px;"></p>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelConfirmBtn">Annulla</button>
+        <button class="modal-btn primary" id="confirmBtn">Conferma</button>
       </div>
     </div>
   </div>
@@ -949,802 +1012,466 @@
     <span id="notificationText"></span>
   </div>
 
+  <input type="file" id="importFileInput" style="display: none;" accept=".json" />
+
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
-    // VARIABILI GLOBALI
-    let tripData = { 
-      days: [], 
-      background: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1500&q=80'
-    };
-    
-    let currentDayId = null;
-    let currentSectionType = null;
-
-    // LIMITI DI ARCHIVIAZIONE
-    const STORAGE_LIMITS = {
-      localStorage: 5 * 1024 * 1024, // 5MB
-      maxImageSize: 2 * 1024 * 1024, // 2MB
-      maxPDFSize: 3 * 1024 * 1024,   // 3MB
-      warningThreshold: 0.8 // 80% dello spazio
-    };
-
     document.addEventListener('DOMContentLoaded', function() {
-      initApp();
-    });
+      // ---- State ----
+      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+      let currentAttachmentContext = {};
+      let onConfirmCallback = null;
+      let editCount = 0;
+      const AUTOSAVE_THRESHOLD = 5;
 
-    function initApp() {
-      loadData();
-      setupEventListeners();
-      checkStorageStatus();
-      if (tripData.days.length === 0) {
-        addNewDay();
-      }
-    }
-
-    function setupEventListeners() {
-      // Navigazione
-      document.getElementById('startBtn').addEventListener('click', showPlanner);
-      document.getElementById('homeBtn').addEventListener('click', showIntro);
-      document.getElementById('bgBtn').addEventListener('click', showBackgroundModal);
-      document.getElementById('backgroundBtn').addEventListener('click', showBackgroundModal);
-      
-      // Giorni
-      document.getElementById('addDayBtn').addEventListener('click', addNewDay);
-      document.getElementById('saveBtn').addEventListener('click', saveData);
-      document.getElementById('resetBtn').addEventListener('click', resetPlanner);
-      
-      // Esportazione/Importazione
-      document.getElementById('exportBtn').addEventListener('click', exportData);
-      document.getElementById('importBtn').addEventListener('click', showImportModal);
-      
-      // Modali
-      document.getElementById('cancelBgBtn').addEventListener('click', () => document.getElementById('backgroundModal').style.display = 'none');
-      document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
-      document.getElementById('cancelAttachBtn').addEventListener('click', hideAttachmentModal);
-      document.getElementById('confirmAttachBtn').addEventListener('click', confirmAttachment);
-      document.getElementById('cancelImportBtn').addEventListener('click', hideImportModal);
-      document.getElementById('confirmImportBtn').addEventListener('click', importData);
-      
-      // Background options
-      document.getElementById('bgOptions').addEventListener('click', function(e) {
-        const target = e.target.closest('.bg-option');
-        if(!target) return;
-        const selectedBg = target.dataset.bg;
-        document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-        target.classList.add('selected');
-        tripData.background = selectedBg;
-        document.body.style.backgroundImage = `url('${selectedBg}')`;
-        saveData();
-        showNotification('Sfondo applicato!', 'success');
-      });
-
-      // Delegazione eventi per i giorni
-      document.getElementById('daysContainer').addEventListener('click', function(e) {
-        const target = e.target;
-        
-        // Gestione click su link
-        if (target.tagName === 'A' && target.href) {
-          e.preventDefault();
-          window.open(target.href, '_blank');
-          return;
-        }
-        
-        // Aggiungi allegato
-        if (target.classList.contains('add-attachment-btn')) {
-          e.preventDefault();
-          const button = target;
-          const section = button.closest('.section');
-          const dayCard = button.closest('.day-card');
-          
-          if (section && dayCard) {
-            currentDayId = dayCard.dataset.id;
-            currentSectionType = section.classList[1];
-            showAttachmentModal();
-          }
-        }
-        
-        // Elimina allegato
-        else if (target.classList.contains('delete-attachment-btn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const deleteBtn = target;
-          const attachmentItem = deleteBtn.closest('.attachment-item');
-          const section = attachmentItem.closest('.section');
-          const dayCard = attachmentItem.closest('.day-card');
-          
-          if (section && dayCard && attachmentItem) {
-            const dayId = dayCard.dataset.id;
-            const sectionType = section.classList[1];
-            const attachmentIndex = parseInt(attachmentItem.dataset.index);
-            
-            const day = tripData.days.find(d => d.id === dayId);
-            if (day && day[sectionType]) {
-              day[sectionType].attachments.splice(attachmentIndex, 1);
-              saveData();
-              renderAllDays();
-              checkStorageStatus();
-              showNotification('Allegato eliminato', 'success');
-            }
-          }
-        }
-        
-        // Elimina giorno
-        else if (target.closest('.delete-day')) {
-          e.preventDefault();
-          const deleteBtn = target.closest('.delete-day');
-          const dayCard = deleteBtn.closest('.day-card');
-          
-          if (dayCard && confirm('Eliminare questo giorno?')) {
-            const dayId = dayCard.dataset.id;
-            tripData.days = tripData.days.filter(d => d.id !== dayId);
-            saveData();
-            renderAllDays();
-            checkStorageStatus();
-            showNotification('Giorno eliminato', 'success');
-          }
-        }
-        
-        // Visualizza allegato
-        else if (target.closest('.attachment-item')) {
-          e.preventDefault();
-          const attachmentItem = target.closest('.attachment-item');
-          const section = attachmentItem.closest('.section');
-          const dayCard = attachmentItem.closest('.day-card');
-          
-          if (section && dayCard && attachmentItem) {
-            const dayId = dayCard.dataset.id;
-            const sectionType = section.classList[1];
-            const attachmentIndex = parseInt(attachmentItem.dataset.index);
-            
-            const day = tripData.days.find(d => d.id === dayId);
-            if (day && day[sectionType]) {
-              const attachment = day[sectionType].attachments[attachmentIndex];
-              viewAttachment(attachment);
-            }
-          }
-        }
-      });
-
-      // Input nei giorni - con supporto link automatico
-      document.getElementById('daysContainer').addEventListener('input', function(e) {
-        if (e.target.classList.contains('editable')) {
-          const editable = e.target;
-          const section = editable.closest('.section');
-          const dayCard = editable.closest('.day-card');
-          
-          if (section && dayCard) {
-            const dayId = dayCard.dataset.id;
-            const sectionType = section.classList[1];
-            const day = tripData.days.find(d => d.id === dayId);
-            
-            if (day) {
-              if (!day[sectionType]) day[sectionType] = { text: '', attachments: [] };
-              day[sectionType].text = editable.innerHTML;
-              saveData();
-            }
-          }
-        }
-        
-        if (e.target.classList.contains('day-title')) {
-          const titleInput = e.target;
-          const dayCard = titleInput.closest('.day-card');
-          const dayId = dayCard.dataset.id;
-          const day = tripData.days.find(d => d.id === dayId);
-          
-          if (day) {
-            day.title = titleInput.value;
-            saveData();
-          }
-        }
-      });
-
-      // Paste con gestione link
-      document.getElementById('daysContainer').addEventListener('paste', function(e) {
-        if (e.target.classList.contains('editable')) {
-          setTimeout(() => {
-            autoLinkUrls(e.target);
-          }, 10);
-        }
-      });
-
-      // Gestione caricamento file sfondo
-      document.getElementById('bgFileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          document.getElementById('customBgInput').value = '';
-        }
-      });
-
-      // Gestione input URL sfondo
-      document.getElementById('customBgInput').addEventListener('input', function(e) {
-        if (e.target.value.trim() !== '') {
-          document.getElementById('bgFileInput').value = '';
-        }
-      });
-    }
-
-    function showBackgroundModal() {
-      document.getElementById('backgroundModal').style.display = 'flex';
-      document.getElementById('bgFileInput').value = '';
-      document.getElementById('customBgInput').value = '';
-      document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-    }
-
-    // FUNZIONE PER GESTIONE LINK AUTOMATICA
-    function autoLinkUrls(element) {
-      const text = element.innerHTML;
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const linkedText = text.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-      if (linkedText !== text) {
-        element.innerHTML = linkedText;
-        
-        // Aggiorna i dati
-        const section = element.closest('.section');
-        const dayCard = element.closest('.day-card');
-        const dayId = dayCard.dataset.id;
-        const sectionType = section.classList[1];
-        const day = tripData.days.find(d => d.id === dayId);
-        
-        if (day) {
-          day[sectionType].text = element.innerHTML;
-          saveData();
-        }
-      }
-    }
-
-    // GESTIONE ARCHIVIAZIONE MIGLIORATA
-    function checkStorageStatus() {
-      const dataSize = new Blob([JSON.stringify(tripData)]).size;
-      const usagePercent = dataSize / STORAGE_LIMITS.localStorage;
-      
-      const warningElement = document.getElementById('storageWarning');
-      const warningText = document.getElementById('storageWarningText');
-      
-      if (usagePercent > STORAGE_LIMITS.warningThreshold) {
-        const remainingMB = ((STORAGE_LIMITS.localStorage - dataSize) / 1024 / 1024).toFixed(1);
-        warningText.textContent = `Attenzione: spazio quasi esaurito (${remainingMB}MB rimanenti)`;
-        warningElement.classList.add('show');
-      } else {
-        warningElement.classList.remove('show');
-      }
-      
-      return usagePercent;
-    }
-
-    function validateFileSize(file) {
-      if (file.type.startsWith('image/') && file.size > STORAGE_LIMITS.maxImageSize) {
-        throw new Error(`L'immagine è troppo grande (max ${STORAGE_LIMITS.maxImageSize / 1024 / 1024}MB)`);
-      }
-      
-      if (file.type === 'application/pdf' && file.size > STORAGE_LIMITS.maxPDFSize) {
-        throw new Error(`Il PDF è troppo grande (max ${STORAGE_LIMITS.maxPDFSize / 1024 / 1024}MB)`);
-      }
-      
-      return true;
-    }
-
-    // COMPRESSIONE IMMAGINI PER MOBILE E DESKTOP
-    function compressImage(file, maxWidth = 1200, quality = 0.8) {
-      return new Promise((resolve) => {
-        if (!file.type.startsWith('image/') || file.size <= 500 * 1024) {
-          // Non comprimere immagini piccole o non immagini
-          resolve(file);
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = new Image();
-          img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            // Calcola nuove dimensioni mantenendo aspect ratio
-            let { width, height } = img;
-            
-            if (width > maxWidth) {
-              height = (height * maxWidth) / width;
-              width = maxWidth;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            // Disegna immagine compressa
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Converti a blob con qualità ridotta
-            canvas.toBlob((blob) => {
-              const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now()
-              });
-              resolve(compressedFile);
-            }, 'image/jpeg', quality);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function showPlanner() { 
-      document.getElementById('introPage').style.display = 'none'; 
-      document.getElementById('plannerContainer').style.display = 'block'; 
-    }
-    
-    function showIntro() { 
-      document.getElementById('plannerContainer').style.display = 'none'; 
-      document.getElementById('introPage').style.display = 'flex'; 
-    }
-
-    function loadData() {
-      const saved = localStorage.getItem('oaxacaPlannerData');
-      if (saved) {
-        try { 
-          tripData = JSON.parse(saved); 
-        } catch(e) {
-          console.error('Errore caricamento dati:', e);
-        }
-      }
-      document.body.style.backgroundImage = `url('${tripData.background}')`;
-      renderAllDays();
-    }
-
-    function saveData() { 
-      if (checkStorageStatus() > 0.95) {
-        showNotification('Spazio esaurito! Elimina alcuni allegati.', 'error');
-        return;
-      }
-      localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData)); 
-      showNotification('Planner salvato!', 'success'); 
-    }
-
-    function renderAllDays() {
+      // ---- Elements ----
+      const introPage = document.getElementById('introPage');
+      const plannerContainer = document.getElementById('plannerContainer');
       const daysContainer = document.getElementById('daysContainer');
-      daysContainer.innerHTML = '';
-      
-      tripData.days.forEach((day, index) => {
-        daysContainer.appendChild(createDayElement(day, index));
-      });
-    }
+      const storageStatus = document.getElementById('storage-status');
 
-    function createDayElement(day, index) {
-      const dayElement = document.createElement('div');
-      dayElement.className = 'day-card';
-      dayElement.dataset.id = day.id;
-      
-      const dayNumber = index + 1;
-      const dayTitle = day.title || `Giorno ${dayNumber}`;
-      
-      // Assicurati che tutte le sezioni esistano
-      if (!day.places) day.places = { text: '', attachments: [] };
-      if (!day.accommodation) day.accommodation = { text: '', attachments: [] };
-      if (!day.transport) day.transport = { text: '', attachments: [] };
-      if (!day.notes) day.notes = { text: '', attachments: [] };
-      
-      dayElement.innerHTML = `
-        <div class="day-header">
-          <div class="day-date-container">
-            <span class="day-date">
-              <i class="fa-regular fa-calendar"></i>
-              <span class="date-text">${day.date || formatDate(new Date())}</span>
-            </span>
-            <input type="text" class="day-title" value="${dayTitle}" placeholder="Titolo giorno">
-          </div>
-          <div class="day-actions">
-            <button class="drag-handle"><i class="fas fa-grip-vertical"></i></button>
-            <button class="delete-day"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="day-content">
-          <div class="section places">
-            <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Luoghi da Visitare</h3>
-            <div class="section-content">
-              <div class="editable" contenteditable="true">${day.places.text || ''}</div>
-              <div class="file-attachments">${renderAttachments(day.places.attachments || [])}</div>
-              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi allegato</button>
-            </div>
-          </div>
-          <div class="section accommodation">
-            <h3 class="section-title"><i class="fas fa-hotel"></i> Alloggio</h3>
-            <div class="section-content">
-              <div class="editable" contenteditable="true">${day.accommodation.text || ''}</div>
-              <div class="file-attachments">${renderAttachments(day.accommodation.attachments || [])}</div>
-              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi allegato</button>
-            </div>
-          </div>
-          <div class="section transport">
-            <h3 class="section-title"><i class="fas fa-bus"></i> Trasporti</h3>
-            <div class="section-content">
-              <div class="editable" contenteditable="true">${day.transport.text || ''}</div>
-              <div class="file-attachments">${renderAttachments(day.transport.attachments || [])}</div>
-              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi allegato</button>
-            </div>
-          </div>
-          <div class="section notes">
-            <h3 class="section-title"><i class="fas fa-sticky-note"></i> Note</h3>
-            <div class="section-content">
-              <div class="editable" contenteditable="true">${day.notes.text || ''}</div>
-              <div class="file-attachments">${renderAttachments(day.notes.attachments || [])}</div>
-              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi allegato</button>
-            </div>
-          </div>
-        </div>
-      `;
+      // ---- Init ----
+      initApp();
 
-      // Datepicker
-      const dateEl = dayElement.querySelector('.day-date');
-      if (window.flatpickr) {
-        window.flatpickr(dateEl, {
-          locale: 'it',
-          dateFormat: 'd/m/Y',
-          defaultDate: parseDate(day.date) || new Date(),
-          onChange: function(selectedDates, dateStr) {
-            day.date = dateStr;
-            dayElement.querySelector('.date-text').textContent = dateStr;
-            saveData();
+      async function initApp(){
+        await loadInitialData();
+        setupEventListeners();
+        updateStorageStatus();
+      }
+
+      function setupEventListeners(){
+        document.getElementById('startBtn').addEventListener('click', showPlanner);
+        document.getElementById('bgBtn').addEventListener('click', () => openModal('backgroundModal'));
+        document.getElementById('backgroundBtn').addEventListener('click', () => openModal('backgroundModal'));
+        document.getElementById('homeBtn').addEventListener('click', showIntro);
+        document.getElementById('addDayBtn').addEventListener('click', addNewDay);
+        
+        document.getElementById('saveBtn').addEventListener('click', exportToJson);
+        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+        document.getElementById('importFileInput').addEventListener('change', handleImport);
+        document.getElementById('exportBtn').addEventListener('click', () => window.print());
+        document.getElementById('resetBtn').addEventListener('click', resetPlanner);
+
+        // Modal Buttons
+        document.querySelectorAll('.modal-btn[id^="cancel"]').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
+        });
+        document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
+        document.getElementById('confirmAttachBtn').addEventListener('click', handleAttachmentConfirm);
+
+        // Background Modal
+        document.getElementById('bgOptions').addEventListener('click', (e) => {
+          const target = e.target.closest('.bg-option');
+          if(!target) return;
+          document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+          target.classList.add('selected');
+        });
+
+        // Confirmation Modal
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            if(typeof onConfirmCallback === 'function') onConfirmCallback();
+            closeModal('confirmModal');
+        });
+        document.getElementById('cancelConfirmBtn').addEventListener('click', () => closeModal('confirmModal'));
+
+
+        // Event Delegation for dynamic content
+        daysContainer.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('editable')) {
+                autolinkUrls(e.target);
+                handleDataChange(e);
+            }
+        }, true);
+        daysContainer.addEventListener('input', handleDataChange);
+        daysContainer.addEventListener('click', handleDayActions);
+      }
+      
+      function handleDataChange(e) {
+            const target = e.target;
+            const card = target.closest('.day-card');
+            if (!card) return;
+            const day = tripData.days.find(d => d.id === card.dataset.id);
+            if (!day) return;
+
+            if (target.classList.contains('editable')) {
+                const type = target.closest('.section').classList[1];
+                day[type].text = target.innerHTML;
+            } else if (target.classList.contains('day-title')) {
+                day.title = target.value;
+            }
+            autoSave();
+      }
+
+      function showPlanner(){ 
+        introPage.style.display = 'none'; 
+        plannerContainer.style.display = 'block'; 
+      }
+      
+      function showIntro(){ 
+        plannerContainer.style.display = 'none'; 
+        introPage.style.display = 'flex'; 
+      }
+
+      async function loadInitialData() {
+        // Try to load from localStorage first
+        const saved = localStorage.getItem('oaxacaPlannerData');
+        if (saved) {
+            try {
+                const parsedData = JSON.parse(saved);
+                if (parsedData && parsedData.days) {
+                    tripData = parsedData;
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento dei dati da localStorage:', e);
+            }
+        }
+        
+        // This will render whatever was found (or default data)
+        updateUI();
+
+        // Then ask to load from a file, which is more reliable
+        if ('showOpenFilePicker' in window) {
+            showConfirmModal('Carica Backup?', 'Vuoi caricare l\'ultimo backup salvato?', async () => {
+                try {
+                    const [fileHandle] = await window.showOpenFilePicker({
+                        types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }],
+                    });
+                    const file = await fileHandle.getFile();
+                    const contents = await file.text();
+                    const importedData = JSON.parse(contents);
+                    if (importedData && importedData.days) {
+                        tripData = importedData;
+                        updateUI();
+                        saveDataToLocalStorage();
+                        showNotification('Backup caricato con successo!', 'success');
+                    } else {
+                        throw new Error('File non valido');
+                    }
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        showNotification('Caricamento annullato o fallito.', 'info');
+                    }
+                }
+            });
+        }
+      }
+
+      function updateUI() {
+        document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
+        renderAllDays();
+        if (tripData.days && tripData.days.length > 0) {
+          showPlanner();
+        } else {
+          showIntro();
+        }
+        updateStorageStatus();
+      }
+
+      function autoSave() {
+          saveDataToLocalStorage();
+          editCount++;
+          if(editCount >= AUTOSAVE_THRESHOLD) {
+              exportToJson(true); // silent export
+              editCount = 0;
           }
+      }
+
+      function saveDataToLocalStorage(forceNotification = false){
+        try {
+          localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
+          if(forceNotification) {
+              showNotification('Planner salvato nella cache!', 'success');
+          }
+          updateStorageStatus();
+        } catch (e) {
+          showNotification('Cache del browser piena. Usa Salva/Esporta!', 'error');
+        }
+      }
+
+      function renderAllDays(){
+        daysContainer.innerHTML = '';
+        tripData.days.forEach((d, index) => daysContainer.appendChild(createDayCard(d, index)));
+      }
+
+      function createDayCard(day, index){
+        const card = document.createElement('div');
+        card.className = 'day-card';
+        card.dataset.id = day.id;
+        
+        let displayTitle = day.title || `Giorno ${index + 1}`;
+        
+        card.innerHTML = `
+          <div class="day-header">
+            <div class="day-date-container">
+              <div class="day-date">
+                <i class="fa-regular fa-calendar" data-toggle></i>
+                <input type="text" placeholder="Seleziona data..." data-input readonly="readonly" />
+              </div>
+              <input type="text" class="day-title" value="${displayTitle}" placeholder="Titolo giorno" />
+            </div>
+            <div class="day-actions">
+              <button class="drag-handle" title="Trascina"><i class="fas fa-grip-vertical"></i></button>
+              <button class="delete-day" title="Elimina"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="day-content">
+            ${createSection('places','Luoghi', day)}
+            ${createSection('accommodation','Alloggio', day)}
+            ${createSection('transport','Trasporti', day)}
+            ${createSection('notes','Note', day)}
+          </div>`;
+
+        flatpickr(card.querySelector('.day-date'), {
+            wrap: true,
+            locale: 'it',
+            dateFormat: 'd/m/Y',
+            defaultDate: parseDate(day.date),
+            onChange: (selectedDates, dateStr) => { 
+              day.date = dateStr;
+              autoSave(); 
+            }
+        });
+        
+        return card;
+      }
+
+      function createSection(type, title, day){
+        const sectionData = day[type] || { text: '', attachments: [] };
+        const attachmentsHTML = sectionData.attachments.map((att, i) => createAttachmentHTML(att, i)).join('');
+        
+        const icons = { places: 'map-marker-alt', accommodation: 'hotel', transport: 'bus', notes: 'sticky-note' };
+        return `
+          <div class="section ${type}">
+            <h3 class="section-title"><i class="fas fa-${icons[type]}"></i> ${title}</h3>
+            <div class="section-content">
+              <div class="editable" contenteditable="true">${sectionData.text}</div>
+              <div class="file-attachments">${attachmentsHTML}</div>
+              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi</button>
+            </div>
+          </div>`;
+      }
+
+      function createAttachmentHTML(att, index) {
+          return `
+            <div class="attachment-item" data-index="${index}">
+              <div class="attachment-thumbnail">${att.type.includes('image') ? `<img src="${att.data}" alt="${att.name}">` : `<i class='fas fa-file-pdf'></i>`}</div>
+              <div class="attachment-name">${att.name}</div>
+              <button class="delete-attachment-btn">&times;</button>
+            </div>`;
+      }
+
+      function addNewDay(){
+        const newDay = { 
+          id: `day_${Date.now()}`, 
+          date: formatDate(new Date()), 
+          title: `Giorno ${tripData.days.length + 1}`,
+          places: {text: '', attachments: []},
+          accommodation: {text: '', attachments: []},
+          transport: {text: '', attachments: []},
+          notes: {text: '', attachments: []}
+        };
+        tripData.days.push(newDay); 
+        autoSave();
+        renderAllDays(); 
+      }
+
+      function parseDate(s){ 
+        if(!s) return null; 
+        const p = s.split('/'); 
+        return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
+      }
+
+      function formatDate(d){ 
+        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
+      }
+
+      function autolinkUrls(element) {
+        let html = element.innerHTML;
+        const urlRegex = /(?![^<]*>|[^>]*<\/(a|button)>)(https?:\/\/[^\s<]+|[a-zA-Z0-9._-]+\.[a-zA-Z]{2,63}[^\s<]*)/g;
+        
+        html = html.replace(urlRegex, (url) => {
+            let href = url;
+            if (!href.startsWith('http')) {
+                href = 'http://' + href;
+            }
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+        
+        if (html !== element.innerHTML) {
+            element.innerHTML = html;
+        }
+      }
+
+      function handleDayActions(e){ 
+        const button = e.target.closest('button');
+        if(!button) return;
+
+        const dayCard = button.closest('.day-card');
+        if(!dayCard) return;
+
+        const day = tripData.days.find(d => d.id === dayCard.dataset.id);
+
+        if(button.classList.contains('delete-day')){ 
+            showConfirmModal('Eliminare Giorno?', 'Questa azione è irreversibile.', () => {
+                tripData.days = tripData.days.filter(d => d.id !== day.id);
+                autoSave();
+                renderAllDays();
+            });
+        } else if(button.classList.contains('add-attachment-btn')){ 
+          currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
+          openModal('attachmentModal');
+        } else if(button.classList.contains('delete-attachment-btn')){
+            const item = button.closest('.attachment-item');
+            const index = parseInt(item.dataset.index);
+            const section = day[item.closest('.section').classList[1]];
+            section.attachments.splice(index, 1);
+            autoSave();
+            renderAllDays();
+        }
+      }
+      
+      function handleAttachmentConfirm(){ 
+        const file = document.getElementById('attachmentFileInput').files[0];
+        if(!file) return showNotification('Nessun file selezionato', 'error');
+
+        const reader = new FileReader(); 
+        reader.onload = (e) => { 
+          const { day, type } = currentAttachmentContext;
+          day[type].attachments.push({ 
+            name: file.name, 
+            type: file.type, 
+            data: e.target.result 
+          }); 
+          autoSave(); 
+          renderAllDays(); 
+          closeModal('attachmentModal');
+        }; 
+        reader.readAsDataURL(file); 
+      }
+      
+      function openModal(id) {
+          document.getElementById(id).style.display = 'flex';
+      }
+      
+      function closeModal(id) {
+          document.getElementById(id).style.display = 'none';
+      }
+
+      function showConfirmModal(title, text, callback) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalText').textContent = text;
+        onConfirmCallback = callback;
+        openModal('confirmModal');
+      }
+
+      function showNotification(msg, type = 'info'){ 
+        const notif = document.getElementById('notification'); 
+        notif.querySelector('#notificationText').textContent = msg; 
+        notif.querySelector('i').className = `fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}`;
+        notif.className = 'notification show'; 
+        setTimeout(() => notif.className = 'notification', 3000); 
+      }
+
+      function updateStorageStatus() {
+          const dataString = JSON.stringify(tripData);
+          const sizeInBytes = new Blob([dataString]).size;
+          const sizeInKB = (sizeInBytes / 1024).toFixed(1);
+          const maxSizeMB = 5;
+          const percentage = ((sizeInBytes / (maxSizeMB * 1024 * 1024)) * 100).toFixed(1);
+          
+          storageStatus.textContent = `Spazio Cache: ${sizeInKB} KB (${percentage}%)`;
+          if (percentage > 80) {
+              storageStatus.classList.add('warning');
+          } else {
+              storageStatus.classList.remove('warning');
+          }
+      }
+      
+      function resetPlanner() {
+        showConfirmModal('Reset Planner?', 'Tutti i dati verranno cancellati. Esporta un backup prima di continuare.', () => {
+            localStorage.removeItem('oaxacaPlannerData');
+            tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+            initApp();
         });
       }
 
-      // Applica auto-link al contenuto esistente
-      const editables = dayElement.querySelectorAll('.editable');
-      editables.forEach(editable => {
-        autoLinkUrls(editable);
-      });
-
-      return dayElement;
-    }
-
-    function renderAttachments(attachments) {
-      if (!attachments || attachments.length === 0) return '';
-      
-      return attachments.map((attachment, index) => `
-        <div class="attachment-item" data-index="${index}">
-          <div class="attachment-thumbnail">
-            ${attachment.type.includes('image') 
-              ? `<img src="${attachment.data}" alt="${attachment.name}">` 
-              : `<i class="fas fa-file-pdf"></i>`}
-          </div>
-          <div class="attachment-name">${attachment.name}</div>
-          <button class="delete-attachment-btn">&times;</button>
-        </div>
-      `).join('');
-    }
-
-    function addNewDay() {
-      let newDate = new Date();
-      
-      if (tripData.days.length > 0) {
-        const lastDay = tripData.days[tripData.days.length - 1];
-        if (lastDay.date) {
-          const lastDate = parseDate(lastDay.date);
-          if (lastDate) {
-            newDate = new Date(lastDate);
-            newDate.setDate(newDate.getDate() + 1);
-          }
-        }
-      }
-      
-      const newDay = {
-        id: 'day_' + Date.now(),
-        date: formatDate(newDate),
-        title: 'Giorno ' + (tripData.days.length + 1),
-        places: { text: '', attachments: [] },
-        accommodation: { text: '', attachments: [] },
-        transport: { text: '', attachments: [] },
-        notes: { text: '', attachments: [] }
-      };
-      
-      tripData.days.push(newDay);
-      saveData();
-      renderAllDays();
-      showNotification('Nuovo giorno aggiunto!', 'success');
-    }
-
-    function parseDate(str) {
-      if (!str) return null;
-      try {
-        const [d, m, y] = str.split('/').map(Number);
-        if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 1 || m > 12 || y < 2000) {
-          return null;
-        }
-        return new Date(y, m - 1, d);
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function formatDate(date) {
-      const d = date.getDate();
-      const m = date.getMonth() + 1;
-      const y = date.getFullYear();
-      return `${d}/${m}/${y}`;
-    }
-
-    // FUNZIONE APPLICA SFONDO COMPLETA
-    function applyBackground() {
-      const fileInput = document.getElementById('bgFileInput');
-      const customUrlInput = document.getElementById('customBgInput');
-      
-      // Prima controlla se c'è un file caricato
-      if (fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
-        
-        // Verifica che sia un'immagine
-        if (!file.type.startsWith('image/')) {
-          showNotification('Seleziona un file immagine valido', 'error');
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          tripData.background = e.target.result;
-          document.body.style.backgroundImage = `url('${e.target.result}')`;
-          saveData();
-          document.getElementById('backgroundModal').style.display = 'none';
-          showNotification('Sfondo applicato con successo!', 'success');
-        };
-        reader.onerror = function() {
-          showNotification('Errore durante la lettura del file', 'error');
-        };
-        reader.readAsDataURL(file);
-      }
-      // Poi controlla se c'è un URL personalizzato
-      else if (customUrlInput.value.trim() !== '') {
-        const url = customUrlInput.value.trim();
-        
-        // Validazione base dell'URL
-        if (!isValidUrl(url)) {
-          showNotification('Inserisci un URL valido', 'error');
-          return;
-        }
-
-        // Testa il caricamento dell'immagine
-        const img = new Image();
-        img.onload = function() {
-          tripData.background = url;
-          document.body.style.backgroundImage = `url('${url}')`;
-          saveData();
-          document.getElementById('backgroundModal').style.display = 'none';
-          showNotification('Sfondo applicato con successo!', 'success');
-        };
-        img.onerror = function() {
-          showNotification('Impossibile caricare l\'immagine dall\'URL fornito', 'error');
-        };
-        img.src = url;
-      }
-      // Se nessuno dei due, controlla se è selezionata un'opzione predefinita
-      else {
-        const selectedOption = document.querySelector('.bg-option.selected');
-        if (selectedOption) {
-          // Lo sfondo è già stato applicato quando si clicca sulle opzioni
-          document.getElementById('backgroundModal').style.display = 'none';
-          showNotification('Sfondo applicato!', 'success');
-        } else {
-          showNotification('Seleziona uno sfondo prima di applicare', 'error');
-        }
-      }
-    }
-
-    // Funzione helper per validare URL
-    function isValidUrl(string) {
-      try {
-        new URL(string);
-        return true;
-      } catch (_) {
-        return false;
-      }
-    }
-
-    // FUNZIONI ESPORTAZIONE/IMPORTAZIONE
-    function exportData() {
-        const dataStr = JSON.stringify(tripData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
-        const exportFileDefaultName = `oaxaca_planner_backup_${formatDateForFile(new Date())}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        showNotification('Backup esportato!', 'success');
-    }
-
-    function showImportModal() {
-        document.getElementById('importModal').style.display = 'flex';
-        document.getElementById('importFileInput').value = '';
-    }
-
-    function hideImportModal() {
-        document.getElementById('importModal').style.display = 'none';
-    }
-
-    function importData() {
-        const fileInput = document.getElementById('importFileInput');
-        const file = fileInput.files[0];
-        
-        if (!file) {
-            showNotification('Seleziona un file prima di importare!', 'error');
+      async function exportToJson(silent = false) {
+        if (!('showSaveFilePicker' in window)) {
+            if(!silent) showNotification('Il tuo browser non supporta il salvataggio diretto.', 'error');
             return;
         }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedData = JSON.parse(e.target.result);
-                
-                if (!importedData.days || !Array.isArray(importedData.days)) {
-                    throw new Error('Formato file non valido');
-                }
-                
-                if (confirm('Importare i dati? I dati attuali verranno sovrascritti.')) {
-                    tripData = importedData;
-                    saveData();
-                    renderAllDays();
-                    checkStorageStatus();
-                    hideImportModal();
-                    showNotification('Backup importato con successo!', 'success');
-                }
-            } catch(error) {
-                console.error('Errore importazione:', error);
-                showNotification('Errore: file di backup non valido', 'error');
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`,
+                types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(JSON.stringify(tripData));
+            await writable.close();
+            if(!silent) showNotification('Backup salvato con successo!', 'success');
+        } catch (err) {
+            if (err.name !== 'AbortError' && !silent) {
+                showNotification('Salvataggio annullato.', 'info');
             }
-        };
-        reader.onerror = function() {
-            showNotification('Errore durante la lettura del file', 'error');
-        };
-        reader.readAsText(file);
-    }
-
-    function formatDateForFile(date) {
-        const d = date.getDate().toString().padStart(2, '0');
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const y = date.getFullYear();
-        const h = date.getHours().toString().padStart(2, '0');
-        const min = date.getMinutes().toString().padStart(2, '0');
-        return `${y}-${m}-${d}_${h}-${min}`;
-    }
-
-    // FUNZIONI ALLEGATI MIGLIORATE
-    function showAttachmentModal() {
-      document.getElementById('attachmentModal').style.display = 'flex';
-      document.getElementById('attachmentFileInput').value = '';
-    }
-
-    function hideAttachmentModal() {
-      document.getElementById('attachmentModal').style.display = 'none';
-    }
-
-    async function confirmAttachment() {
-      const fileInput = document.getElementById('attachmentFileInput');
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        showNotification('Seleziona un file prima di confermare!', 'error');
-        return;
+        }
       }
 
-      try {
-        // Validazione dimensioni
-        validateFileSize(file);
-        
-        if (!currentDayId || !currentSectionType) {
-          showNotification('Errore: impossibile determinare dove aggiungere l\'allegato', 'error');
-          return;
+      async function handleImport() {
+        const file = document.getElementById('importFileInput').files[0];
+        if (!file) return;
+
+        const contents = await file.text();
+        try {
+            const importedData = JSON.parse(contents);
+            if (importedData && importedData.days) {
+                showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
+                    tripData = importedData;
+                    saveDataToLocalStorage(true);
+                    updateUI();
+                });
+            } else throw new Error();
+        } catch {
+            showNotification('File di backup non valido.', 'error');
         }
+      }
+      
+      function applyBackground() {
+          let newBg;
+          const selectedOption = document.querySelector('.bg-option.selected');
+          const customUrl = document.getElementById('customBgInput').value.trim();
 
-        // Compressione immagini (automatica)
-        let processedFile = file;
-        if (file.type.startsWith('image/')) {
-          showNotification('Compressione immagine in corso...', 'info');
-          processedFile = await compressImage(file);
-        }
-
-        const reader = new FileReader();
-        
-        reader.onload = async function(e) {
-          // Trova il giorno corretto
-          const day = tripData.days.find(d => d.id === currentDayId);
-          if (!day) {
-            showNotification('Giorno non trovato', 'error');
-            return;
-          }
-
-          // Controlla spazio prima di aggiungere
-          if (checkStorageStatus() > 0.95) {
-            showNotification('Spazio insufficiente! Elimina alcuni allegati.', 'error');
-            return;
-          }
-
-          // Assicurati che la sezione esista
-          if (!day[currentSectionType]) {
-            day[currentSectionType] = { text: '', attachments: [] };
-          }
-
-          // Aggiungi l'allegato
-          day[currentSectionType].attachments.push({
-            name: processedFile.name,
-            type: processedFile.type,
-            data: e.target.result,
-            size: processedFile.size,
-            originalSize: file.size
-          });
-
-          saveData();
-          renderAllDays();
-          checkStorageStatus();
-          hideAttachmentModal();
+          if(customUrl) newBg = customUrl;
+          else if(selectedOption) newBg = selectedOption.dataset.bg;
           
-          if (file.type.startsWith('image/') && file.size !== processedFile.size) {
-            const saved = ((file.size - processedFile.size) / 1024).toFixed(1);
-            showNotification(`Allegato aggiunto! Risparmiati ${saved}KB`, 'success');
-          } else {
-            showNotification('Allegato aggiunto con successo!', 'success');
+          if(newBg) {
+              tripData.background = newBg;
+              autoSave();
+              document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
+              closeModal('backgroundModal');
           }
+      }
+
+      function handleBgFileSelect(e){ 
+        const file = e.target.files[0]; 
+        if(!file) return;
+        
+        document.getElementById('customBgInput').value = '';
+        document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+
+        const reader = new FileReader(); 
+        reader.onload = (e) => { 
+            tripData.background = e.target.result;
+            autoSave();
+            document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
+            closeModal('backgroundModal');
         };
-
-        reader.onerror = function() {
-          showNotification('Errore durante la lettura del file', 'error');
-        };
-
-        reader.readAsDataURL(processedFile);
-
-      } catch (error) {
-        showNotification(error.message, 'error');
+        reader.readAsDataURL(file); 
       }
-    }
 
-    function viewAttachment(attachment) {
-      const viewer = document.createElement('div');
-      viewer.className = 'fullscreen-attachment';
-      
-      if (attachment.type.includes('image')) {
-        viewer.innerHTML = `<img src="${attachment.data}" alt="${attachment.name}">`;
-      } else {
-        viewer.innerHTML = `<iframe src="${attachment.data}" width="90%" height="90%"></iframe>`;
-      }
-      
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'close-fullscreen';
-      closeBtn.innerHTML = '&times;';
-      closeBtn.addEventListener('click', function() {
-        document.body.removeChild(viewer);
-      });
-      viewer.appendChild(closeBtn);
-      
-      viewer.addEventListener('click', function(e) {
-        if (e.target === viewer) {
-          document.body.removeChild(viewer);
-        }
-      });
-      
-      document.body.appendChild(viewer);
-    }
-
-    function resetPlanner() {
-      if (confirm('Sei sicuro di voler resettare tutto? Tutti i dati andranno persi.')) {
-        tripData.days = [];
-        saveData();
-        renderAllDays();
-        checkStorageStatus();
-        showNotification('Planner resettato', 'info');
-      }
-    }
-
-    function showNotification(msg, type) {
-      const notif = document.getElementById('notification');
-      const icon = document.getElementById('notificationIcon');
-      const text = document.getElementById('notificationText');
-      text.textContent = msg;
-      const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
-      icon.className = 'fas ' + (icons[type] || 'fa-info-circle');
-      notif.className = 'notification show';
-      setTimeout(function(){ notif.className = 'notification'; }, 3000);
-    }
+    });
   </script>
 </body>
 </html>
+
