@@ -194,7 +194,7 @@
       position: absolute;
       right: 0;
       background: #fff;
-      min-width: 180px;
+      min-width: 200px;
       box-shadow: 0 8px 16px rgba(0,0,0,.2);
       z-index: 10000;
       border-radius: 8px;
@@ -1036,9 +1036,18 @@
       initApp();
 
       async function initApp(){
-        await loadInitialData();
+        loadFromLocalStorage();
         setupEventListeners();
         updateStorageStatus();
+
+        if ('showOpenFilePicker' in window) {
+            // This is a progressive enhancement for desktop, doesn't block main flow
+            setTimeout(() => {
+                if(confirm("Vuoi caricare l'ultimo backup da un file?")) {
+                    handleImport(null, true); // True for picker
+                }
+            }, 1000);
+        }
       }
 
       function setupEventListeners(){
@@ -1048,9 +1057,9 @@
         document.getElementById('homeBtn').addEventListener('click', showIntro);
         document.getElementById('addDayBtn').addEventListener('click', addNewDay);
         
-        document.getElementById('saveBtn').addEventListener('click', exportToJson);
+        document.getElementById('saveBtn').addEventListener('click', () => exportToJson(false));
         document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
-        document.getElementById('importFileInput').addEventListener('change', handleImport);
+        document.getElementById('importFileInput').addEventListener('change', (e) => handleImport(e, false)); // False for input
         document.getElementById('exportBtn').addEventListener('click', () => window.print());
         document.getElementById('resetBtn').addEventListener('click', resetPlanner);
 
@@ -1075,7 +1084,6 @@
             closeModal('confirmModal');
         });
         document.getElementById('cancelConfirmBtn').addEventListener('click', () => closeModal('confirmModal'));
-
 
         // Event Delegation for dynamic content
         daysContainer.addEventListener('blur', (e) => {
@@ -1114,48 +1122,19 @@
         introPage.style.display = 'flex'; 
       }
 
-      async function loadInitialData() {
-        // Try to load from localStorage first
+      function loadFromLocalStorage(){
         const saved = localStorage.getItem('oaxacaPlannerData');
-        if (saved) {
-            try {
-                const parsedData = JSON.parse(saved);
-                if (parsedData && parsedData.days) {
-                    tripData = parsedData;
-                }
-            } catch (e) {
-                console.error('Errore nel caricamento dei dati da localStorage:', e);
+        if(saved){
+          try { 
+            const parsedData = JSON.parse(saved);
+            if(parsedData && parsedData.days) {
+              tripData = parsedData;
             }
+          } catch(e){
+            console.error('Errore nel caricamento dei dati da localStorage:', e);
+          }
         }
-        
-        // This will render whatever was found (or default data)
         updateUI();
-
-        // Then ask to load from a file, which is more reliable
-        if ('showOpenFilePicker' in window) {
-            showConfirmModal('Carica Backup?', 'Vuoi caricare l\'ultimo backup salvato?', async () => {
-                try {
-                    const [fileHandle] = await window.showOpenFilePicker({
-                        types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }],
-                    });
-                    const file = await fileHandle.getFile();
-                    const contents = await file.text();
-                    const importedData = JSON.parse(contents);
-                    if (importedData && importedData.days) {
-                        tripData = importedData;
-                        updateUI();
-                        saveDataToLocalStorage();
-                        showNotification('Backup caricato con successo!', 'success');
-                    } else {
-                        throw new Error('File non valido');
-                    }
-                } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        showNotification('Caricamento annullato o fallito.', 'info');
-                    }
-                }
-            });
-        }
       }
 
       function updateUI() {
@@ -1173,7 +1152,9 @@
           saveDataToLocalStorage();
           editCount++;
           if(editCount >= AUTOSAVE_THRESHOLD) {
-              exportToJson(true); // silent export
+              if ('showSaveFilePicker' in window) {
+                  exportToJson(true); // silent export on desktop
+              }
               editCount = 0;
           }
       }
@@ -1182,11 +1163,11 @@
         try {
           localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
           if(forceNotification) {
-              showNotification('Planner salvato nella cache!', 'success');
+              showNotification('Planner salvato nella cache del browser!', 'success');
           }
           updateStorageStatus();
         } catch (e) {
-          showNotification('Cache del browser piena. Usa Salva/Esporta!', 'error');
+          showNotification('Cache del browser piena! Usa "Salva Backup" per salvare su file.', 'error');
         }
       }
 
@@ -1239,7 +1220,7 @@
 
       function createSection(type, title, day){
         const sectionData = day[type] || { text: '', attachments: [] };
-        const attachmentsHTML = sectionData.attachments.map((att, i) => createAttachmentHTML(att, i)).join('');
+        const attachmentsHTML = (sectionData.attachments || []).map((att, i) => createAttachmentHTML(att, i)).join('');
         
         const icons = { places: 'map-marker-alt', accommodation: 'hotel', transport: 'bus', notes: 'sticky-note' };
         return `
@@ -1304,31 +1285,47 @@
         }
       }
 
-      function handleDayActions(e){ 
-        const button = e.target.closest('button');
-        if(!button) return;
+      function handleDayActions(e){
+        const target = e.target;
+        const button = target.closest('button');
+        const item = target.closest('.attachment-item');
 
-        const dayCard = button.closest('.day-card');
-        if(!dayCard) return;
+        if (button) {
+            const dayCard = button.closest('.day-card');
+            if (!dayCard) return;
 
-        const day = tripData.days.find(d => d.id === dayCard.dataset.id);
+            const day = tripData.days.find(d => d.id === dayCard.dataset.id);
 
-        if(button.classList.contains('delete-day')){ 
-            showConfirmModal('Eliminare Giorno?', 'Questa azione è irreversibile.', () => {
-                tripData.days = tripData.days.filter(d => d.id !== day.id);
+            if (button.classList.contains('delete-day')) { 
+                showConfirmModal('Eliminare Giorno?', 'Questa azione è irreversibile.', () => {
+                    tripData.days = tripData.days.filter(d => d.id !== day.id);
+                    autoSave();
+                    renderAllDays();
+                });
+            } else if (button.classList.contains('add-attachment-btn')) { 
+                currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
+                openModal('attachmentModal');
+            } else if (button.classList.contains('delete-attachment-btn')) {
+                const attachmentItem = button.closest('.attachment-item');
+                const index = parseInt(attachmentItem.dataset.index);
+                const section = day[attachmentItem.closest('.section').classList[1]];
+                section.attachments.splice(index, 1);
                 autoSave();
                 renderAllDays();
-            });
-        } else if(button.classList.contains('add-attachment-btn')){ 
-          currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
-          openModal('attachmentModal');
-        } else if(button.classList.contains('delete-attachment-btn')){
-            const item = button.closest('.attachment-item');
-            const index = parseInt(item.dataset.index);
-            const section = day[item.closest('.section').classList[1]];
-            section.attachments.splice(index, 1);
-            autoSave();
-            renderAllDays();
+            }
+        } else if (item) {
+             const dayCard = item.closest('.day-card');
+             const day = tripData.days.find(d => d.id === dayCard.dataset.id);
+             const index = parseInt(item.dataset.index);
+             const sectionType = item.closest('.section').classList[1];
+             const att = day[sectionType].attachments[index];
+             if(att.type.includes('image')) {
+                 openViewAttachmentModal(att);
+             } else if(att.type.includes('pdf')) {
+                 const blob = dataURIToBlob(att.data);
+                 const url = URL.createObjectURL(blob);
+                 window.open(url, '_blank');
+             }
         }
       }
       
@@ -1339,6 +1336,7 @@
         const reader = new FileReader(); 
         reader.onload = (e) => { 
           const { day, type } = currentAttachmentContext;
+          if (!day[type]) day[type] = { text: '', attachments: [] };
           day[type].attachments.push({ 
             name: file.name, 
             type: file.type, 
@@ -1349,6 +1347,29 @@
           closeModal('attachmentModal');
         }; 
         reader.readAsDataURL(file); 
+      }
+      
+       function dataURIToBlob(dataURI) {
+        const byteString = atob(dataURI.split(',')[1]);
+        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+      }
+
+      function openViewAttachmentModal(att){ 
+        const fullscreenView = document.createElement('div');
+        fullscreenView.className = 'fullscreen-attachment';
+        fullscreenView.innerHTML = `
+            <button class="close-fullscreen">&times;</button>
+            <img src="${att.data}" alt="${att.name}">
+        `;
+        fullscreenView.querySelector('.close-fullscreen').addEventListener('click', () => document.body.removeChild(fullscreenView));
+        fullscreenView.addEventListener('click', (e) => { if (e.target === fullscreenView) document.body.removeChild(fullscreenView); });
+        document.body.appendChild(fullscreenView);
       }
       
       function openModal(id) {
@@ -1398,10 +1419,20 @@
       }
 
       async function exportToJson(silent = false) {
+        // Fallback for browsers that don't support showSaveFilePicker (like mobile)
         if (!('showSaveFilePicker' in window)) {
-            if(!silent) showNotification('Il tuo browser non supporta il salvataggio diretto.', 'error');
+            const dataStr = JSON.stringify(tripData);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            if(!silent) showNotification('Backup scaricato!', 'success');
             return;
         }
+
         try {
             const handle = await window.showSaveFilePicker({
                 suggestedName: `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`,
@@ -1418,22 +1449,35 @@
         }
       }
 
-      async function handleImport() {
-        const file = document.getElementById('importFileInput').files[0];
-        if (!file) return;
-
-        const contents = await file.text();
+      async function handleImport(e, usePicker = false) {
+        let file;
         try {
+            if(usePicker) {
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{ description: 'Planner JSON', accept: { 'application/json': ['.json'] } }],
+                });
+                file = await fileHandle.getFile();
+            } else {
+                file = e.target.files[0];
+            }
+
+            if (!file) return;
+
+            const contents = await file.text();
             const importedData = JSON.parse(contents);
+
             if (importedData && importedData.days) {
                 showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
                     tripData = importedData;
                     saveDataToLocalStorage(true);
                     updateUI();
                 });
-            } else throw new Error();
-        } catch {
-            showNotification('File di backup non valido.', 'error');
+            } else throw new Error('Invalid file format');
+        } catch(err) {
+            if (err.name !== 'AbortError') {
+                showNotification('File di backup non valido o caricamento annullato.', 'error');
+                console.error(err);
+            }
         }
       }
       
@@ -1474,4 +1518,5 @@
   </script>
 </body>
 </html>
+
 
