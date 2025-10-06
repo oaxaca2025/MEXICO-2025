@@ -1252,6 +1252,13 @@
         const target = e.target;
         const button = target.closest('button');
         const item = target.closest('.attachment-item');
+        const link = target.closest('a');
+
+        if (link && link.href) {
+            e.preventDefault();
+            window.open(link.href, '_blank');
+            return;
+        }
 
         if (button) {
             const dayCard = button.closest('.day-card');
@@ -1358,23 +1365,12 @@
         notif.className = 'notification show'; 
         setTimeout(() => notif.className = 'notification', 3000); 
       }
-
-      function updateStorageStatus() {
-          try {
-            const dataString = JSON.stringify(tripData);
-            const sizeInBytes = new Blob([dataString]).size;
-            if(document.getElementById('storage-status')) { // Check if element exists
-                document.getElementById('storage-status').style.display = 'none';
-            }
-          } catch(e) {
-            // Ignore if it fails, not critical
-          }
-      }
       
       function resetPlanner() {
         showConfirmModal('Reset Planner?', 'Tutti i dati verranno cancellati. Esporta un backup prima di continuare.', () => {
             localStorage.removeItem('oaxacaPlannerData');
             tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+            unsavedChanges = false;
             initApp();
         });
       }
@@ -1387,7 +1383,9 @@
               const a = document.createElement("a");
               a.href = url;
               a.download = `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`;
+              document.body.appendChild(a);
               a.click();
+              document.body.removeChild(a);
               URL.revokeObjectURL(url);
               showNotification('Backup salvato!', 'success');
               unsavedChanges = false;
@@ -1464,6 +1462,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
