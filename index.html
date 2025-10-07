@@ -1,4 +1,6 @@
-
+<!DOCTYPE html>
+<html lang="it">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>OAXACA 2025 - Planner</title>
@@ -1027,7 +1029,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 🔥 SISTEMA DI SALVATAGGIO AVANZATO CON CORREZIONE APPLYBACKGROUND
+      // 🔥 SISTEMA DI SALVATAGGIO AVANZATO CON CORREZIONI
       class AdvancedPlanner {
         constructor() {
           this.tripData = { 
@@ -1085,10 +1087,7 @@
               btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
           });
           
-          // 🔥 CORREZIONE: Aggiunto listener specifico per cancelBgBtn
-          document.getElementById('cancelBgBtn').addEventListener('click', () => this.closeModal('backgroundModal'));
           document.getElementById('applyBgBtn').addEventListener('click', () => this.applyBackground());
-          
           document.getElementById('confirmAttachBtn').addEventListener('click', () => this.handleAttachmentConfirm());
 
           // Background Modal
@@ -1097,21 +1096,6 @@
             if(!target) return;
             document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
             target.classList.add('selected');
-          });
-
-          // 🔥 CORREZIONE: Aggiunti listener per file input e URL input
-          document.getElementById('bgFileInput').addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-              document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-              document.getElementById('customBgInput').value = '';
-            }
-          });
-
-          document.getElementById('customBgInput').addEventListener('input', (e) => {
-            if (e.target.value.trim()) {
-              document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-              document.getElementById('bgFileInput').value = '';
-            }
           });
 
           // Confirmation Modal
@@ -1151,7 +1135,7 @@
           this.openModal('backgroundModal');
         }
 
-        // 🔥 CORREZIONE CRITICA: applyBackground completamente riscritto
+        // 🔥 CORREZIONE: applyBackground completamente funzionante
         applyBackground() {
           const selectedOption = document.querySelector('.bg-option.selected');
           const customUrl = document.getElementById('customBgInput').value.trim();
@@ -1188,6 +1172,83 @@
           this.showNotification('✅ Sfondo cambiato con successo!', 'success');
         }
 
+        // 🔥 CORREZIONE CRITICA: addNewDay con gestione date corretta
+        addNewDay() {
+          // Crea la data dell'ultimo giorno o usa oggi
+          let nextDate = new Date();
+          
+          if (this.tripData.days.length > 0) {
+            const lastDay = this.tripData.days[this.tripData.days.length - 1];
+            
+            // IMPORTANTE: Converti la stringa "GG/MM/AAAA" in oggetto Date corretto
+            if (lastDay.date) {
+              const [day, month, year] = lastDay.date.split('/').map(Number);
+              // I mesi in JavaScript partono da 0 (Gennaio = 0)
+              const lastDate = new Date(year, month - 1, day);
+              
+              // Aggiungi un giorno
+              nextDate = new Date(lastDate);
+              nextDate.setDate(nextDate.getDate() + 1);
+            }
+          }
+          
+          const newDay = { 
+            id: `day_${Date.now()}`, 
+            date: this.formatDate(nextDate), 
+            title: `Giorno ${this.tripData.days.length + 1}`,
+            places: { text: '', attachments: [] },
+            accommodation: { text: '', attachments: [] },
+            transport: { text: '', attachments: [] },
+            notes: { text: '', attachments: [] }
+          };
+          
+          this.tripData.days.push(newDay); 
+          this.unsavedChanges = true;
+          this.updateStorageStatus('warning', 'Modifiche non salvate');
+          this.saveToLocalStorage(true);
+          this.renderAllDays(); 
+        }
+
+        // 🔥 CORREZIONE: manualSaveToJSON con gestione download migliorata
+        manualSaveToJSON() {
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastManualSave: new Date().toISOString(),
+              saveType: 'manual'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Aggiungi un timestamp per rendere il nome unico
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            a.download = `Oaxaca_Planner_${timestamp}.json`;
+            
+            // Aggiungi al DOM e triggera il download
+            document.body.appendChild(a);
+            a.click();
+            
+            // Pulizia ritardata per assicurarsi che il download parta
+            setTimeout(() => {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }, 100);
+
+            this.unsavedChanges = false;
+            this.updateStorageStatus('success', 'Backup manuale salvato!');
+            this.showNotification('✅ Backup manuale salvato con successo!', 'success');
+            
+          } catch (error) {
+            console.error('Errore salvataggio manuale:', error);
+            this.updateStorageStatus('danger', 'Errore nel salvataggio');
+            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
+          }
+        }
+
         // 🔥 SISTEMA DI SALVATAGGIO AUTOMATICO AVANZATO
         startAutoSaveSystem() {
           // Salvataggio automatico ogni 2 minuti
@@ -1195,7 +1256,7 @@
             if (this.unsavedChanges) {
               this.autoSaveToJSON();
             }
-          }, 120000); // 2 minuti
+          }, 120000);
 
           // Salvataggio ritardato dopo modifiche (30 secondi di inattività)
           let delayTimer;
@@ -1205,14 +1266,13 @@
               if (this.unsavedChanges) {
                 this.autoSaveToJSON();
               }
-            }, 30000); // 30 secondi dopo l'ultima modifica
+            }, 30000);
           };
 
           document.addEventListener('input', scheduleSave);
           document.addEventListener('change', scheduleSave);
         }
 
-        // 🔥 SALVATAGGIO AUTOMATICO SU JSON
         autoSaveToJSON() {
           if (!this.unsavedChanges) return;
 
@@ -1234,62 +1294,28 @@
             
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            
+            setTimeout(() => {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }, 100);
 
             this.unsavedChanges = false;
             this.tripData.lastAutoSave = new Date().toISOString();
             this.updateStorageStatus('success', 'Salvataggio automatico completato');
             
-            console.log('🔄 Salvataggio automatico eseguito:', new Date().toLocaleTimeString());
           } catch (error) {
             console.error('Errore salvataggio automatico:', error);
             this.updateStorageStatus('danger', 'Errore salvataggio automatico');
           }
         }
 
-        // 🔥 SALVATAGGIO MANUALE SU JSON
-        manualSaveToJSON() {
-          try {
-            const dataToSave = {
-              ...this.tripData,
-              lastManualSave: new Date().toISOString(),
-              saveType: 'manual'
-            };
-
-            const jsonString = JSON.stringify(dataToSave, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            
-            const dateStr = new Date().toISOString().slice(0, 10);
-            a.download = `Oaxaca_Planner_${dateStr}.json`;
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            this.unsavedChanges = false;
-            this.updateStorageStatus('success', 'Backup manuale salvato!');
-            this.showNotification('✅ Backup manuale salvato con successo!', 'success');
-            
-          } catch (error) {
-            console.error('Errore salvataggio manuale:', error);
-            this.updateStorageStatus('danger', 'Errore nel salvataggio');
-            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
-          }
-        }
-
-        // 🔥 FORZA SALVATAGGIO AUTOMATICO
         forceAutoSave() {
           this.unsavedChanges = true;
           this.autoSaveToJSON();
           this.showNotification('🔄 Salvataggio automatico in corso...', 'info');
         }
 
-        // 🔥 STATO SALVATAGGIO
         updateStorageStatus(type, message) {
           const statusElement = document.getElementById('storageStatus');
           const textElement = document.getElementById('storageStatusText');
@@ -1320,7 +1346,6 @@
               day.title = target.value;
           }
           
-          // 🔥 SEGNALA MODIFICHE NON SALVATE
           this.unsavedChanges = true;
           this.updateStorageStatus('warning', 'Modifiche non salvate');
           this.saveToLocalStorage();
@@ -1346,7 +1371,6 @@
               }
             } catch(e){
               console.error('Errore nel caricamento dei dati da localStorage:', e);
-              this.showNotification('Backup nella cache corrotto. Importane uno.', 'error');
             }
           }
           this.updateUI();
@@ -1445,23 +1469,6 @@
                 <div class="attachment-name">${att.name}</div>
                 <button class="delete-attachment-btn">&times;</button>
               </div>`;
-        }
-
-        addNewDay(){
-          const newDay = { 
-            id: `day_${Date.now()}`, 
-            date: this.formatDate(new Date()), 
-            title: `Giorno ${this.tripData.days.length + 1}`,
-            places: {text: '', attachments: []},
-            accommodation: {text: '', attachments: []},
-            transport: {text: '', attachments: []},
-            notes: {text: '', attachments: []}
-          };
-          this.tripData.days.push(newDay); 
-          this.unsavedChanges = true;
-          this.updateStorageStatus('warning', 'Modifiche non salvate');
-          this.saveToLocalStorage(true);
-          this.renderAllDays(); 
         }
 
         parseDate(s){ 
@@ -1661,4 +1668,3 @@
   </script>
 </body>
 </html>
-
