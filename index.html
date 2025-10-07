@@ -499,6 +499,29 @@
       color: #2980B9;
     }
 
+    /* Storage Status */
+    .storage-status {
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid #28a745;
+    }
+
+    .storage-status.warning {
+      border-left-color: #ffc107;
+      background: rgba(255,193,7,0.1);
+    }
+
+    .storage-status.danger {
+      border-left-color: #dc3545;
+      background: rgba(220,53,69,0.1);
+    }
+
     /* Modals */
     .modal {
       display: none;
@@ -925,7 +948,8 @@
           <div class="dropdown">
             <button class="dropdown-btn" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
             <div class="dropdown-content" role="menu">
-              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva Backup</a>
+              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva Backup Manuale</a>
+              <a href="#" id="autoSaveBtn"><i class="fas fa-sync"></i> Salva Backup Automatico</a>
               <a href="#" id="importBtn"><i class="fas fa-upload"></i> Importa Backup</a>
               <a href="#" id="printBtn"><i class="fas fa-print"></i> Stampa</a>
               <a href="#" id="resetBtn"><i class="fas fa-trash"></i> Reset Planner</a>
@@ -934,12 +958,16 @@
             </div>
           </div>
         </div>
+        <div class="storage-status" id="storageStatus">
+          <i class="fas fa-check-circle"></i>
+          <span id="storageStatusText">Tutto salvato</span>
+        </div>
       </div>
     </div>
 
     <div class="days-container" id="daysContainer"></div>
 
-    <footer><p>OAXACA 2025 &copy; - Dati salvati nel browser</p></footer>
+    <footer><p>OAXACA 2025 &copy; - Salvataggio automatico su file JSON attivo</p></footer>
   </div>
 
   <!-- Modals -->
@@ -1001,483 +1029,637 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      let tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
-      let currentAttachmentContext = {};
-      let onConfirmCallback = null;
-      let unsavedChanges = false;
+      // 🔥 SISTEMA DI SALVATAGGIO AVANZATO CON CORREZIONE APPLYBACKGROUND
+      class AdvancedPlanner {
+        constructor() {
+          this.tripData = { 
+            days: [], 
+            background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+            lastAutoSave: null,
+            version: '2.0'
+          };
+          this.currentAttachmentContext = {};
+          this.onConfirmCallback = null;
+          this.unsavedChanges = false;
+          this.autoSaveTimeout = null;
+          this.autoSaveInterval = null;
+          this.isStandaloneApp = this.detectStandaloneApp();
+          
+          this.init();
+        }
 
-      const introPage = document.getElementById('introPage');
-      const plannerContainer = document.getElementById('plannerContainer');
-      const daysContainer = document.getElementById('daysContainer');
+        detectStandaloneApp() {
+          return window.navigator.standalone || 
+                 window.matchMedia('(display-mode: standalone)').matches ||
+                 document.referrer.includes('android-app://');
+        }
 
-      function initApp(){
-        loadFromLocalStorage();
-        setupEventListeners();
-        
-        setTimeout(() => {
-            showConfirmModal('Carica Backup?', 'Vuoi caricare un backup da un file?', () => {
-                document.getElementById('importFileInput').click();
-            });
-        }, 1000);
-      }
+        init() {
+          this.loadFromLocalStorage();
+          this.setupEventListeners();
+          this.startAutoSaveSystem();
+          this.showAppWarningIfNeeded();
+        }
 
-      function setupEventListeners(){
-        document.getElementById('startBtn').addEventListener('click', showPlanner);
-        document.getElementById('bgBtn').addEventListener('click', () => openModal('backgroundModal'));
-        document.getElementById('backgroundBtn').addEventListener('click', () => openModal('backgroundModal'));
-        document.getElementById('homeBtn').addEventListener('click', showIntro);
-        document.getElementById('addDayBtn').addEventListener('click', addNewDay);
-        
-        document.getElementById('saveBtn').addEventListener('click', () => exportToJson());
-        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
-        document.getElementById('importFileInput').addEventListener('change', handleImport);
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
-        document.getElementById('resetBtn').addEventListener('click', resetPlanner);
+        showAppWarningIfNeeded() {
+          if (this.isStandaloneApp) {
+            this.showNotification('⚠️ ATTENZIONE: Stai usando la versione app. Salva spesso i backup manualmente!', 'error');
+          }
+        }
 
-        // Modal Buttons
-        document.querySelectorAll('.modal .modal-btn[id^="cancel"]').forEach(btn => {
-            btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
-        });
-        document.getElementById('applyBgBtn').addEventListener('click', applyBackground);
-        document.getElementById('confirmAttachBtn').addEventListener('click', handleAttachmentConfirm);
+        setupEventListeners() {
+          document.getElementById('startBtn').addEventListener('click', () => this.showPlanner());
+          document.getElementById('bgBtn').addEventListener('click', () => this.openBackgroundModal());
+          document.getElementById('backgroundBtn').addEventListener('click', () => this.openBackgroundModal());
+          document.getElementById('homeBtn').addEventListener('click', () => this.showIntro());
+          document.getElementById('addDayBtn').addEventListener('click', () => this.addNewDay());
+          
+          // Pulsanti salvataggio
+          document.getElementById('saveBtn').addEventListener('click', () => this.manualSaveToJSON());
+          document.getElementById('autoSaveBtn').addEventListener('click', () => this.forceAutoSave());
+          document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+          document.getElementById('importFileInput').addEventListener('change', (e) => this.handleImport(e));
+          document.getElementById('printBtn').addEventListener('click', () => window.print());
+          document.getElementById('resetBtn').addEventListener('click', () => this.resetPlanner());
 
-        // Background Modal
-        document.getElementById('bgOptions').addEventListener('click', (e) => {
-          const target = e.target.closest('.bg-option');
-          if(!target) return;
+          // Modal Buttons
+          document.querySelectorAll('.modal .modal-btn[id^="cancel"]').forEach(btn => {
+              btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
+          });
+          
+          // 🔥 CORREZIONE: Aggiunto listener specifico per cancelBgBtn
+          document.getElementById('cancelBgBtn').addEventListener('click', () => this.closeModal('backgroundModal'));
+          document.getElementById('applyBgBtn').addEventListener('click', () => this.applyBackground());
+          
+          document.getElementById('confirmAttachBtn').addEventListener('click', () => this.handleAttachmentConfirm());
+
+          // Background Modal
+          document.getElementById('bgOptions').addEventListener('click', (e) => {
+            const target = e.target.closest('.bg-option');
+            if(!target) return;
+            document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+            target.classList.add('selected');
+          });
+
+          // 🔥 CORREZIONE: Aggiunti listener per file input e URL input
+          document.getElementById('bgFileInput').addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+              document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+              document.getElementById('customBgInput').value = '';
+            }
+          });
+
+          document.getElementById('customBgInput').addEventListener('input', (e) => {
+            if (e.target.value.trim()) {
+              document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+              document.getElementById('bgFileInput').value = '';
+            }
+          });
+
+          // Confirmation Modal
+          document.getElementById('confirmBtn').addEventListener('click', () => {
+              if(typeof this.onConfirmCallback === 'function') this.onConfirmCallback();
+              this.closeModal('confirmModal');
+          });
+          document.getElementById('cancelConfirmBtn').addEventListener('click', () => this.closeModal('confirmModal'));
+
+          // Event Delegation for dynamic content
+          const daysContainer = document.getElementById('daysContainer');
+          daysContainer.addEventListener('blur', (e) => {
+              if (e.target.classList.contains('editable')) {
+                  this.autolinkUrls(e.target);
+                  this.handleDataChange(e);
+              }
+          }, true);
+          daysContainer.addEventListener('input', (e) => this.handleDataChange(e));
+          daysContainer.addEventListener('click', (e) => this.handleDayActions(e));
+          
+          window.addEventListener('beforeunload', (e) => {
+              if (this.unsavedChanges) {
+                  e.preventDefault();
+                  e.returnValue = 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
+                  return 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
+              }
+          });
+        }
+
+        // 🔥 CORREZIONE: Metodo per aprire il modal sfondo
+        openBackgroundModal() {
+          // Reset del modal
           document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-          target.classList.add('selected');
-        });
-
-        // Confirmation Modal
-        document.getElementById('confirmBtn').addEventListener('click', () => {
-            if(typeof onConfirmCallback === 'function') onConfirmCallback();
-            closeModal('confirmModal');
-        });
-        document.getElementById('cancelConfirmBtn').addEventListener('click', () => closeModal('confirmModal'));
-
-        // Event Delegation for dynamic content
-        daysContainer.addEventListener('blur', (e) => {
-            if (e.target.classList.contains('editable')) {
-                autolinkUrls(e.target);
-                handleDataChange(e);
-            }
-        }, true);
-        daysContainer.addEventListener('input', handleDataChange);
-        daysContainer.addEventListener('click', handleDayActions);
-        
-        // 🔥 AVVISO DI CHIUSURA - MODIFICA AGGIUNTA
-        window.addEventListener('beforeunload', (e) => {
-            if (unsavedChanges) {
-                e.preventDefault();
-                e.returnValue = 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
-                return 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
-            }
-        });
-      }
-      
-      function handleDataChange(e) {
-            const target = e.target;
-            const card = target.closest('.day-card');
-            if (!card) return;
-            const day = tripData.days.find(d => d.id === card.dataset.id);
-            if (!day) return;
-
-            if (target.classList.contains('editable')) {
-                const type = target.closest('.section').classList[1];
-                day[type].text = target.innerHTML;
-            } else if (target.classList.contains('day-title')) {
-                day.title = target.value;
-            }
-            
-            // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-            unsavedChanges = true;
-            saveDataToLocalStorage();
-      }
-
-      function showPlanner(){ 
-        introPage.style.display = 'none'; 
-        plannerContainer.style.display = 'block'; 
-      }
-      
-      function showIntro(){ 
-        plannerContainer.style.display = 'none'; 
-        introPage.style.display = 'flex'; 
-      }
-
-      function loadFromLocalStorage(){
-        const saved = localStorage.getItem('oaxacaPlannerData');
-        if(saved){
-          try { 
-            const parsedData = JSON.parse(saved);
-            if(parsedData && Array.isArray(parsedData.days)) {
-              tripData = parsedData;
-            }
-          } catch(e){
-            console.error('Errore nel caricamento dei dati da localStorage:', e);
-            showNotification('Backup nella cache corrotto. Importane uno.', 'error');
-          }
-        }
-        updateUI();
-      }
-
-      function updateUI() {
-        document.documentElement.style.setProperty('--bg-image', `url('${tripData.background}')`);
-        renderAllDays();
-        if (tripData.days && tripData.days.length > 0) {
-          showPlanner();
-        } else {
-          showIntro();
-        }
-      }
-
-      function saveDataToLocalStorage(forceNotification = false){
-        try {
-          localStorage.setItem('oaxacaPlannerData', JSON.stringify(tripData));
-          // 🔥 RESETTA IL FLAG QUANDO I DATI VENGONO SALVATI
-          unsavedChanges = false;
-          if(forceNotification) {
-              showNotification('Modifiche salvate nella cache del browser!', 'success');
-          }
-        } catch (e) {
-          showNotification('Cache del browser piena! Usa "Salva Backup" per salvare su file.', 'error');
-        }
-      }
-
-      function renderAllDays(){
-        daysContainer.innerHTML = '';
-        tripData.days.forEach((d, index) => daysContainer.appendChild(createDayCard(d, index)));
-      }
-
-      function createDayCard(day, index){
-        const card = document.createElement('div');
-        card.className = 'day-card';
-        card.dataset.id = day.id;
-        
-        let displayTitle = day.title || `Giorno ${index + 1}`;
-        
-        card.innerHTML = `
-          <div class="day-header">
-            <div class="day-date-container">
-              <div class="day-date">
-                <i class="fa-regular fa-calendar" data-toggle></i>
-                <input type="text" placeholder="Seleziona data..." data-input readonly="readonly" />
-              </div>
-              <input type="text" class="day-title" value="${displayTitle}" placeholder="Titolo giorno" />
-            </div>
-            <div class="day-actions">
-              <button class="delete-day" title="Elimina"><i class="fas fa-trash"></i></button>
-            </div>
-          </div>
-          <div class="day-content">
-            ${createSection('places','Luoghi', day)}
-            ${createSection('accommodation','Alloggio', day)}
-            ${createSection('transport','Trasporti', day)}
-            ${createSection('notes','Note', day)}
-          </div>`;
-
-        flatpickr(card.querySelector('.day-date'), {
-            wrap: true,
-            locale: 'it',
-            dateFormat: 'd/m/Y',
-            defaultDate: parseDate(day.date),
-            onChange: (selectedDates, dateStr) => { 
-              day.date = dateStr;
-              // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-              unsavedChanges = true;
-              saveDataToLocalStorage(); 
-            }
-        });
-        
-        return card;
-      }
-
-      function createSection(type, title, day){
-        const sectionData = day[type] || { text: '', attachments: [] };
-        const attachmentsHTML = (sectionData.attachments || []).map((att, i) => createAttachmentHTML(att, i)).join('');
-        
-        const icons = { places: 'map-marker-alt', accommodation: 'hotel', transport: 'bus', notes: 'sticky-note' };
-        return `
-          <div class="section ${type}">
-            <h3 class="section-title"><i class="fas fa-${icons[type]}"></i> ${title}</h3>
-            <div class="section-content">
-              <div class="editable" contenteditable="true">${sectionData.text}</div>
-              <div class="file-attachments">${attachmentsHTML}</div>
-              <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi</button>
-            </div>
-          </div>`;
-      }
-
-      function createAttachmentHTML(att, index) {
-          return `
-            <div class="attachment-item" data-index="${index}">
-              <div class="attachment-thumbnail">${att.type.includes('image') ? `<img src="${att.data}" alt="${att.name}">` : `<i class='fas fa-file-pdf'></i>`}</div>
-              <div class="attachment-name">${att.name}</div>
-              <button class="delete-attachment-btn">&times;</button>
-            </div>`;
-      }
-
-      function addNewDay(){
-        const newDay = { 
-          id: `day_${Date.now()}`, 
-          date: formatDate(new Date()), 
-          title: `Giorno ${tripData.days.length + 1}`,
-          places: {text: '', attachments: []},
-          accommodation: {text: '', attachments: []},
-          transport: {text: '', attachments: []},
-          notes: {text: '', attachments: []}
-        };
-        tripData.days.push(newDay); 
-        // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-        unsavedChanges = true;
-        saveDataToLocalStorage(true);
-        renderAllDays(); 
-      }
-
-      function parseDate(s){ 
-        if(!s) return null; 
-        const p = s.split('/'); 
-        return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
-      }
-
-      function formatDate(d){ 
-        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
-      }
-
-      function autolinkUrls(element) {
-        if (element.querySelector('a')) return;
-
-        const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,!?"')\];])/g;
-        let html = element.innerHTML;
-        
-        html = html.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
-        
-        if (html !== element.innerHTML) {
-            element.innerHTML = html;
-        }
-      }
-
-      function handleDayActions(e){
-        const target = e.target;
-        const button = target.closest('button');
-        const item = target.closest('.attachment-item');
-        const link = target.closest('a');
-
-        if (link && link.href) {
-            e.preventDefault();
-            window.open(link.href, '_blank');
-            return;
+          document.getElementById('customBgInput').value = '';
+          document.getElementById('bgFileInput').value = '';
+          
+          this.openModal('backgroundModal');
         }
 
-        if (button) {
-            const dayCard = button.closest('.day-card');
-            if (!dayCard) return;
-            const day = tripData.days.find(d => d.id === dayCard.dataset.id);
-            if (!day) return;
-
-            if (button.classList.contains('delete-day')) { 
-                showConfirmModal('Eliminare Giorno?', `Sei sicuro di voler eliminare "${day.title}"?`, () => {
-                    tripData.days = tripData.days.filter(d => d.id !== day.id);
-                    // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-                    unsavedChanges = true;
-                    saveDataToLocalStorage(true);
-                    renderAllDays();
-                });
-            } else if (button.classList.contains('add-attachment-btn')) { 
-                currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
-                openModal('attachmentModal');
-            } else if (button.classList.contains('delete-attachment-btn')) {
-                const attachmentItem = button.closest('.attachment-item');
-                const index = parseInt(attachmentItem.dataset.index);
-                const section = day[attachmentItem.closest('.section').classList[1]];
-                section.attachments.splice(index, 1);
-                // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-                unsavedChanges = true;
-                saveDataToLocalStorage(true);
-                renderAllDays();
-            }
-        } else if (item) {
-             const dayCard = item.closest('.day-card');
-             if(!dayCard) return;
-             const day = tripData.days.find(d => d.id === dayCard.dataset.id);
-             const index = parseInt(item.dataset.index);
-             const sectionType = item.closest('.section').classList[1];
-             const att = day[sectionType].attachments[index];
-             if(att.type.includes('image')) {
-                 openViewAttachmentModal(att);
-             } else if(att.type.includes('pdf')) {
-                 const blob = dataURIToBlob(att.data);
-                 const url = URL.createObjectURL(blob);
-                 window.open(url, '_blank');
-             }
-        }
-      }
-      
-      function handleAttachmentConfirm(){ 
-        const file = document.getElementById('attachmentFileInput').files[0];
-        if(!file) return showNotification('Nessun file selezionato', 'error');
-
-        const reader = new FileReader(); 
-        reader.onload = (e) => { 
-          const { day, type } = currentAttachmentContext;
-          if (!day[type]) day[type] = { text: '', attachments: [] };
-          day[type].attachments.push({ 
-            name: file.name, 
-            type: file.type, 
-            data: e.target.result 
-          }); 
-          // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-          unsavedChanges = true;
-          saveDataToLocalStorage(true); 
-          renderAllDays(); 
-          closeModal('attachmentModal');
-        }; 
-        reader.readAsDataURL(file); 
-      }
-      
-       function dataURIToBlob(dataURI) {
-        const byteString = atob(dataURI.split(',')[1]);
-        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeString });
-      }
-
-      function openViewAttachmentModal(att){ 
-        const fullscreenView = document.createElement('div');
-        fullscreenView.className = 'fullscreen-attachment';
-        fullscreenView.innerHTML = `
-            <button class="close-fullscreen">&times;</button>
-            <img src="${att.data}" alt="${att.name}">
-        `;
-        fullscreenView.querySelector('.close-fullscreen').addEventListener('click', () => document.body.removeChild(fullscreenView));
-        fullscreenView.addEventListener('click', (e) => { if (e.target === fullscreenView) document.body.removeChild(fullscreenView); });
-        document.body.appendChild(fullscreenView);
-      }
-      
-      function openModal(id) {
-          document.getElementById(id).style.display = 'flex';
-      }
-      
-      function closeModal(id) {
-          document.getElementById(id).style.display = 'none';
-      }
-
-      function showConfirmModal(title, text, callback) {
-        document.getElementById('confirmModalTitle').textContent = title;
-        document.getElementById('confirmModalText').textContent = text;
-        onConfirmCallback = callback;
-        openModal('confirmModal');
-      }
-
-      function showNotification(msg, type = 'info'){ 
-        const notif = document.getElementById('notification'); 
-        notif.querySelector('#notificationText').textContent = msg; 
-        notif.querySelector('i').className = `fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}`;
-        notif.className = 'notification show'; 
-        setTimeout(() => notif.className = 'notification', 3000); 
-      }
-      
-      function resetPlanner() {
-        showConfirmModal('Reset Planner?', 'Tutti i dati verranno cancellati. Esporta un backup prima di continuare.', () => {
-            localStorage.removeItem('oaxacaPlannerData');
-            tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
-            unsavedChanges = false;
-            initApp();
-        });
-      }
-
-      function exportToJson() {
-          try {
-              const dataStr = JSON.stringify(tripData);
-              const blob = new Blob([dataStr], {type: "application/json"});
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `oaxaca_planner_${new Date().toISOString().slice(0,10)}.json`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-              showNotification('Backup salvato!', 'success');
-              // 🔥 RESETTA IL FLAG DOPO L'ESPORT
-              unsavedChanges = false;
-          } catch(e) {
-              showNotification('Esportazione fallita. Memoria insufficiente?', 'error');
-          }
-      }
-
-      function handleImport(e) {
-        if (!e.target.files || e.target.files.length === 0) {
-            showNotification('Nessun file selezionato.', 'info');
-            return;
-        }
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const importedData = JSON.parse(event.target.result);
-                if (importedData && Array.isArray(importedData.days)) {
-                    showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
-                        tripData = importedData;
-                        saveDataToLocalStorage(true);
-                        updateUI();
-                        unsavedChanges = false;
-                    });
-                } else {
-                    throw new Error('Formato file non valido');
-                }
-            } catch {
-                showNotification('File di backup non valido o corrotto.', 'error');
-            } finally {
-                e.target.value = ''; // Reset input
-            }
-        };
-        reader.onerror = () => {
-            showNotification('Errore nella lettura del file.', 'error');
-        };
-        reader.readAsText(file);
-      }
-      
-      function applyBackground() {
-          let newBg;
+        // 🔥 CORREZIONE CRITICA: applyBackground completamente riscritto
+        applyBackground() {
           const selectedOption = document.querySelector('.bg-option.selected');
           const customUrl = document.getElementById('customBgInput').value.trim();
           const fileInput = document.getElementById('bgFileInput');
 
-          if(customUrl) {
-              newBg = customUrl;
-              updateBg(newBg);
+          if (customUrl) {
+            this.updateBg(customUrl);
           } else if (selectedOption) {
-              newBg = selectedOption.dataset.bg;
-              updateBg(newBg);
-          } else if (fileInput.files[0]) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                  newBg = e.target.result;
-                  updateBg(newBg);
-              };
-              reader.readAsDataURL(fileInput.files[0]);
+            this.updateBg(selectedOption.dataset.bg);
+          } else if (fileInput.files && fileInput.files[0]) {
+            // CORREZIONE: Gestione asincrona corretta del file
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.updateBg(e.target.result);
+            };
+            reader.onerror = (error) => {
+                console.error('Errore caricamento file:', error);
+                this.showNotification('❌ Errore nel caricamento del file', 'error');
+            };
+            reader.readAsDataURL(fileInput.files[0]);
           } else {
-              showNotification('Nessuno sfondo selezionato.', 'error');
+            this.showNotification('❌ Seleziona uno sfondo, carica un file o inserisci un URL', 'error');
           }
+        }
+
+        // 🔥 CORREZIONE: Metodo per aggiornare lo sfondo
+        updateBg(newBg) {
+          this.tripData.background = newBg;
+          this.unsavedChanges = true;
+          this.updateStorageStatus('warning', 'Modifiche non salvate');
+          this.saveToLocalStorage();
+          document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
+          this.closeModal('backgroundModal');
+          this.showNotification('✅ Sfondo cambiato con successo!', 'success');
+        }
+
+        // 🔥 SISTEMA DI SALVATAGGIO AUTOMATICO AVANZATO
+        startAutoSaveSystem() {
+          // Salvataggio automatico ogni 2 minuti
+          this.autoSaveInterval = setInterval(() => {
+            if (this.unsavedChanges) {
+              this.autoSaveToJSON();
+            }
+          }, 120000); // 2 minuti
+
+          // Salvataggio ritardato dopo modifiche (30 secondi di inattività)
+          let delayTimer;
+          const scheduleSave = () => {
+            clearTimeout(delayTimer);
+            delayTimer = setTimeout(() => {
+              if (this.unsavedChanges) {
+                this.autoSaveToJSON();
+              }
+            }, 30000); // 30 secondi dopo l'ultima modifica
+          };
+
+          document.addEventListener('input', scheduleSave);
+          document.addEventListener('change', scheduleSave);
+        }
+
+        // 🔥 SALVATAGGIO AUTOMATICO SU JSON
+        autoSaveToJSON() {
+          if (!this.unsavedChanges) return;
+
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastAutoSave: new Date().toISOString(),
+              saveType: 'auto'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            a.download = `Oaxaca_AutoBackup_${timestamp}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.unsavedChanges = false;
+            this.tripData.lastAutoSave = new Date().toISOString();
+            this.updateStorageStatus('success', 'Salvataggio automatico completato');
+            
+            console.log('🔄 Salvataggio automatico eseguito:', new Date().toLocaleTimeString());
+          } catch (error) {
+            console.error('Errore salvataggio automatico:', error);
+            this.updateStorageStatus('danger', 'Errore salvataggio automatico');
+          }
+        }
+
+        // 🔥 SALVATAGGIO MANUALE SU JSON
+        manualSaveToJSON() {
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastManualSave: new Date().toISOString(),
+              saveType: 'manual'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.download = `Oaxaca_Planner_${dateStr}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.unsavedChanges = false;
+            this.updateStorageStatus('success', 'Backup manuale salvato!');
+            this.showNotification('✅ Backup manuale salvato con successo!', 'success');
+            
+          } catch (error) {
+            console.error('Errore salvataggio manuale:', error);
+            this.updateStorageStatus('danger', 'Errore nel salvataggio');
+            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
+          }
+        }
+
+        // 🔥 FORZA SALVATAGGIO AUTOMATICO
+        forceAutoSave() {
+          this.unsavedChanges = true;
+          this.autoSaveToJSON();
+          this.showNotification('🔄 Salvataggio automatico in corso...', 'info');
+        }
+
+        // 🔥 STATO SALVATAGGIO
+        updateStorageStatus(type, message) {
+          const statusElement = document.getElementById('storageStatus');
+          const textElement = document.getElementById('storageStatusText');
+          
+          statusElement.className = 'storage-status';
+          if (type === 'warning') statusElement.classList.add('warning');
+          if (type === 'danger') statusElement.classList.add('danger');
+          
+          textElement.textContent = message;
+          
+          const icon = statusElement.querySelector('i');
+          icon.className = type === 'success' ? 'fas fa-check-circle' :
+                          type === 'warning' ? 'fas fa-exclamation-triangle' :
+                          'fas fa-exclamation-circle';
+        }
+
+        handleDataChange(e) {
+          const target = e.target;
+          const card = target.closest('.day-card');
+          if (!card) return;
+          const day = this.tripData.days.find(d => d.id === card.dataset.id);
+          if (!day) return;
+
+          if (target.classList.contains('editable')) {
+              const type = target.closest('.section').classList[1];
+              day[type].text = target.innerHTML;
+          } else if (target.classList.contains('day-title')) {
+              day.title = target.value;
+          }
+          
+          // 🔥 SEGNALA MODIFICHE NON SALVATE
+          this.unsavedChanges = true;
+          this.updateStorageStatus('warning', 'Modifiche non salvate');
+          this.saveToLocalStorage();
+        }
+
+        showPlanner(){ 
+          document.getElementById('introPage').style.display = 'none'; 
+          document.getElementById('plannerContainer').style.display = 'block'; 
+        }
+        
+        showIntro(){ 
+          document.getElementById('plannerContainer').style.display = 'none'; 
+          document.getElementById('introPage').style.display = 'flex'; 
+        }
+
+        loadFromLocalStorage(){
+          const saved = localStorage.getItem('oaxacaPlannerData');
+          if(saved){
+            try { 
+              const parsedData = JSON.parse(saved);
+              if(parsedData && Array.isArray(parsedData.days)) {
+                this.tripData = { ...this.tripData, ...parsedData };
+              }
+            } catch(e){
+              console.error('Errore nel caricamento dei dati da localStorage:', e);
+              this.showNotification('Backup nella cache corrotto. Importane uno.', 'error');
+            }
+          }
+          this.updateUI();
+        }
+
+        updateUI() {
+          document.documentElement.style.setProperty('--bg-image', `url('${this.tripData.background}')`);
+          this.renderAllDays();
+          if (this.tripData.days && this.tripData.days.length > 0) {
+            this.showPlanner();
+          } else {
+            this.showIntro();
+          }
+        }
+
+        saveToLocalStorage(forceNotification = false){
+          try {
+            localStorage.setItem('oaxacaPlannerData', JSON.stringify(this.tripData));
+            if(forceNotification) {
+                this.showNotification('Modifiche salvate nella cache del browser!', 'success');
+            }
+          } catch (e) {
+            this.showNotification('Cache del browser piena! Usa "Salva Backup" per salvare su file.', 'error');
+          }
+        }
+
+        renderAllDays(){
+          const daysContainer = document.getElementById('daysContainer');
+          daysContainer.innerHTML = '';
+          this.tripData.days.forEach((d, index) => daysContainer.appendChild(this.createDayCard(d, index)));
+        }
+
+        createDayCard(day, index){
+          const card = document.createElement('div');
+          card.className = 'day-card';
+          card.dataset.id = day.id;
+          
+          let displayTitle = day.title || `Giorno ${index + 1}`;
+          
+          card.innerHTML = `
+            <div class="day-header">
+              <div class="day-date-container">
+                <div class="day-date">
+                  <i class="fa-regular fa-calendar" data-toggle></i>
+                  <input type="text" placeholder="Seleziona data..." data-input readonly="readonly" />
+                </div>
+                <input type="text" class="day-title" value="${displayTitle}" placeholder="Titolo giorno" />
+              </div>
+              <div class="day-actions">
+                <button class="delete-day" title="Elimina"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="day-content">
+              ${this.createSection('places','Luoghi', day)}
+              ${this.createSection('accommodation','Alloggio', day)}
+              ${this.createSection('transport','Trasporti', day)}
+              ${this.createSection('notes','Note', day)}
+            </div>`;
+
+          flatpickr(card.querySelector('.day-date'), {
+              wrap: true,
+              locale: 'it',
+              dateFormat: 'd/m/Y',
+              defaultDate: this.parseDate(day.date),
+              onChange: (selectedDates, dateStr) => { 
+                day.date = dateStr;
+                this.unsavedChanges = true;
+                this.updateStorageStatus('warning', 'Modifiche non salvate');
+                this.saveToLocalStorage(); 
+              }
+          });
+          
+          return card;
+        }
+
+        createSection(type, title, day){
+          const sectionData = day[type] || { text: '', attachments: [] };
+          const attachmentsHTML = (sectionData.attachments || []).map((att, i) => this.createAttachmentHTML(att, i)).join('');
+          
+          const icons = { places: 'map-marker-alt', accommodation: 'hotel', transport: 'bus', notes: 'sticky-note' };
+          return `
+            <div class="section ${type}">
+              <h3 class="section-title"><i class="fas fa-${icons[type]}"></i> ${title}</h3>
+              <div class="section-content">
+                <div class="editable" contenteditable="true">${sectionData.text}</div>
+                <div class="file-attachments">${attachmentsHTML}</div>
+                <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi</button>
+              </div>
+            </div>`;
+        }
+
+        createAttachmentHTML(att, index) {
+            return `
+              <div class="attachment-item" data-index="${index}">
+                <div class="attachment-thumbnail">${att.type.includes('image') ? `<img src="${att.data}" alt="${att.name}">` : `<i class='fas fa-file-pdf'></i>`}</div>
+                <div class="attachment-name">${att.name}</div>
+                <button class="delete-attachment-btn">&times;</button>
+              </div>`;
+        }
+
+        addNewDay(){
+          const newDay = { 
+            id: `day_${Date.now()}`, 
+            date: this.formatDate(new Date()), 
+            title: `Giorno ${this.tripData.days.length + 1}`,
+            places: {text: '', attachments: []},
+            accommodation: {text: '', attachments: []},
+            transport: {text: '', attachments: []},
+            notes: {text: '', attachments: []}
+          };
+          this.tripData.days.push(newDay); 
+          this.unsavedChanges = true;
+          this.updateStorageStatus('warning', 'Modifiche non salvate');
+          this.saveToLocalStorage(true);
+          this.renderAllDays(); 
+        }
+
+        parseDate(s){ 
+          if(!s) return null; 
+          const p = s.split('/'); 
+          return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
+        }
+
+        formatDate(d){ 
+          return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
+        }
+
+        autolinkUrls(element) {
+          if (element.querySelector('a')) return;
+
+          const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,!?"')\];])/g;
+          let html = element.innerHTML;
+          
+          html = html.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+          
+          if (html !== element.innerHTML) {
+              element.innerHTML = html;
+          }
+        }
+
+        handleDayActions(e){
+          const target = e.target;
+          const button = target.closest('button');
+          const item = target.closest('.attachment-item');
+          const link = target.closest('a');
+
+          if (link && link.href) {
+              e.preventDefault();
+              window.open(link.href, '_blank');
+              return;
+          }
+
+          if (button) {
+              const dayCard = button.closest('.day-card');
+              if (!dayCard) return;
+              const day = this.tripData.days.find(d => d.id === dayCard.dataset.id);
+              if (!day) return;
+
+              if (button.classList.contains('delete-day')) { 
+                  this.showConfirmModal('Eliminare Giorno?', `Sei sicuro di voler eliminare "${day.title}"?`, () => {
+                      this.tripData.days = this.tripData.days.filter(d => d.id !== day.id);
+                      this.unsavedChanges = true;
+                      this.updateStorageStatus('warning', 'Modifiche non salvate');
+                      this.saveToLocalStorage(true);
+                      this.renderAllDays();
+                  });
+              } else if (button.classList.contains('add-attachment-btn')) { 
+                  this.currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
+                  this.openModal('attachmentModal');
+              } else if (button.classList.contains('delete-attachment-btn')) {
+                  const attachmentItem = button.closest('.attachment-item');
+                  const index = parseInt(attachmentItem.dataset.index);
+                  const section = day[attachmentItem.closest('.section').classList[1]];
+                  section.attachments.splice(index, 1);
+                  this.unsavedChanges = true;
+                  this.updateStorageStatus('warning', 'Modifiche non salvate');
+                  this.saveToLocalStorage(true);
+                  this.renderAllDays();
+              }
+          } else if (item) {
+               const dayCard = item.closest('.day-card');
+               if(!dayCard) return;
+               const day = this.tripData.days.find(d => d.id === dayCard.dataset.id);
+               const index = parseInt(item.dataset.index);
+               const sectionType = item.closest('.section').classList[1];
+               const att = day[sectionType].attachments[index];
+               if(att.type.includes('image')) {
+                   this.openViewAttachmentModal(att);
+               } else if(att.type.includes('pdf')) {
+                   const blob = this.dataURIToBlob(att.data);
+                   const url = URL.createObjectURL(blob);
+                   window.open(url, '_blank');
+               }
+          }
+        }
+        
+        handleAttachmentConfirm(){ 
+          const file = document.getElementById('attachmentFileInput').files[0];
+          if(!file) return this.showNotification('Nessun file selezionato', 'error');
+
+          const reader = new FileReader(); 
+          reader.onload = (e) => { 
+            const { day, type } = this.currentAttachmentContext;
+            if (!day[type]) day[type] = { text: '', attachments: [] };
+            day[type].attachments.push({ 
+              name: file.name, 
+              type: file.type, 
+              data: e.target.result 
+            }); 
+            this.unsavedChanges = true;
+            this.updateStorageStatus('warning', 'Modifiche non salvate');
+            this.saveToLocalStorage(true); 
+            this.renderAllDays(); 
+            this.closeModal('attachmentModal');
+          }; 
+          reader.readAsDataURL(file); 
+        }
+        
+        dataURIToBlob(dataURI) {
+          const byteString = atob(dataURI.split(',')[1]);
+          const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+          }
+          return new Blob([ab], { type: mimeString });
+        }
+
+        openViewAttachmentModal(att){ 
+          const fullscreenView = document.createElement('div');
+          fullscreenView.className = 'fullscreen-attachment';
+          fullscreenView.innerHTML = `
+              <button class="close-fullscreen">&times;</button>
+              <img src="${att.data}" alt="${att.name}">
+          `;
+          fullscreenView.querySelector('.close-fullscreen').addEventListener('click', () => document.body.removeChild(fullscreenView));
+          fullscreenView.addEventListener('click', (e) => { if (e.target === fullscreenView) document.body.removeChild(fullscreenView); });
+          document.body.appendChild(fullscreenView);
+        }
+        
+        openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        
+        closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        showConfirmModal(title, text, callback) {
+          document.getElementById('confirmModalTitle').textContent = title;
+          document.getElementById('confirmModalText').textContent = text;
+          this.onConfirmCallback = callback;
+          this.openModal('confirmModal');
+        }
+
+        showNotification(msg, type = 'info'){ 
+          const notif = document.getElementById('notification'); 
+          notif.querySelector('#notificationText').textContent = msg; 
+          notif.querySelector('i').className = `fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}`;
+          notif.className = 'notification show'; 
+          setTimeout(() => notif.className = 'notification', 5000); 
+        }
+        
+        resetPlanner() {
+          this.showConfirmModal('Reset Planner?', 'Tutti i dati verranno cancellati. Esporta un backup prima di continuare.', () => {
+              localStorage.removeItem('oaxacaPlannerData');
+              this.tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+              this.unsavedChanges = false;
+              this.updateStorageStatus('success', 'Pronto per iniziare');
+              this.init();
+          });
+        }
+
+        handleImport(e) {
+          if (!e.target.files || e.target.files.length === 0) {
+              this.showNotification('Nessun file selezionato.', 'info');
+              return;
+          }
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              try {
+                  const importedData = JSON.parse(event.target.result);
+                  if (importedData && Array.isArray(importedData.days)) {
+                      this.showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
+                          this.tripData = importedData;
+                          this.saveToLocalStorage(true);
+                          this.updateUI();
+                          this.unsavedChanges = false;
+                          this.updateStorageStatus('success', 'Backup importato');
+                      });
+                  } else {
+                      throw new Error('Formato file non valido');
+                  }
+              } catch {
+                  this.showNotification('File di backup non valido o corrotto.', 'error');
+              } finally {
+                  e.target.value = '';
+              }
+          };
+          reader.onerror = () => {
+              this.showNotification('Errore nella lettura del file.', 'error');
+          };
+          reader.readAsText(file);
+        }
       }
 
-      function updateBg(newBg) {
-        tripData.background = newBg;
-        // 🔥 IMPOSTA IL FLAG PER MODIFICHE NON SALVATE
-        unsavedChanges = true;
-        saveDataToLocalStorage();
-        document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
-        closeModal('backgroundModal');
-      }
-
-      initApp();
+      // 🔥 INIZIALIZZA L'APPLICAZIONE
+      const planner = new AdvancedPlanner();
     });
   </script>
 </body>
 </html>
-
