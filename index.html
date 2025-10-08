@@ -647,6 +647,45 @@
       background: #333;
     }
 
+    /* Backup Modal */
+    .backup-content {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px dashed #dee2e6;
+      margin-bottom: 20px;
+    }
+    
+    .backup-textarea {
+      width: 100%;
+      height: 200px;
+      padding: 15px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      resize: vertical;
+      background: white;
+    }
+    
+    .copy-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Oswald', sans-serif;
+      margin-top: 10px;
+    }
+    
+    .copy-btn:hover {
+      background: #218838;
+    }
+
     footer {
       text-align: center;
       margin-top: 40px;
@@ -1052,6 +1091,27 @@
     </div>
   </div>
 
+  <div class="modal" id="backupModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Backup Dati</h2>
+      <div class="backup-content">
+        <p><strong>Opzione 1: Copia e Incolla</strong></p>
+        <textarea class="backup-textarea" id="backupTextarea" readonly placeholder="I dati del backup appariranno qui..."></textarea>
+        <button class="copy-btn" id="copyBackupBtn">
+          <i class="fas fa-copy"></i> Copia negli Appunti
+        </button>
+        
+        <p style="margin-top: 20px;"><strong>Opzione 2: Download File</strong></p>
+        <button class="modal-btn primary" id="downloadBackupBtn" style="width: 100%;">
+          <i class="fas fa-download"></i> Scarica come File
+        </button>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelBackupBtn">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <h2 class="modal-title" id="confirmModalTitle"></h2>
@@ -1080,7 +1140,7 @@
           this.tripData = { 
             days: [], 
             background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
-            version: '2.1'
+            version: '2.2'
           };
           this.currentAttachmentContext = {};
           this.onConfirmCallback = null;
@@ -1091,7 +1151,7 @@
         init() {
           this.setupEventListeners();
           this.updateUI();
-          this.setupRealTimeSaving(); // CORREZIONE: Salvataggio in tempo reale
+          this.setupRealTimeSaving();
         }
 
         setupEventListeners() {
@@ -1102,12 +1162,17 @@
           document.getElementById('homeBtn').addEventListener('click', () => this.showIntro());
           document.getElementById('addDayBtn').addEventListener('click', () => this.addNewDay());
           
-          // Salvataggio e gestione dati
-          document.getElementById('saveBtn').addEventListener('click', () => this.manualSaveToJSON());
+          // Salvataggio e gestione dati - CORREZIONE SAFARI
+          document.getElementById('saveBtn').addEventListener('click', () => this.openBackupModal());
           document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
           document.getElementById('importFileInput').addEventListener('change', (e) => this.handleImport(e));
           document.getElementById('printBtn').addEventListener('click', () => window.print());
           document.getElementById('resetBtn').addEventListener('click', () => this.resetPlanner());
+
+          // Backup modal events
+          document.getElementById('copyBackupBtn').addEventListener('click', () => this.copyBackupToClipboard());
+          document.getElementById('downloadBackupBtn').addEventListener('click', () => this.downloadBackupFile());
+          document.getElementById('cancelBackupBtn').addEventListener('click', () => this.closeModal('backupModal'));
 
           // Gestione modali
           document.getElementById('cancelBgBtn').addEventListener('click', () => this.closeModal('backgroundModal'));
@@ -1131,23 +1196,79 @@
           });
         }
 
-        // CORREZIONE: Salvataggio in tempo reale
+        // CORREZIONE SAFARI: Nuovo metodo per backup
+        openBackupModal() {
+          this.saveAllData();
+          
+          const dataToSave = {
+            ...this.tripData,
+            lastManualSave: new Date().toISOString()
+          };
+
+          const jsonString = JSON.stringify(dataToSave, null, 2);
+          document.getElementById('backupTextarea').value = jsonString;
+          this.openModal('backupModal');
+        }
+
+        // CORREZIONE SAFARI: Copia negli appunti
+        copyBackupToClipboard() {
+          const textarea = document.getElementById('backupTextarea');
+          textarea.select();
+          textarea.setSelectionRange(0, 99999);
+          
+          try {
+            navigator.clipboard.writeText(textarea.value).then(() => {
+              this.showNotification('✅ Backup copiato negli appunti!', 'success');
+            }).catch(() => {
+              // Fallback per browser più vecchi
+              document.execCommand('copy');
+              this.showNotification('✅ Backup copiato negli appunti!', 'success');
+            });
+          } catch (error) {
+            this.showNotification('❌ Errore nella copia', 'error');
+          }
+        }
+
+        // CORREZIONE SAFARI: Download con fallback
+        downloadBackupFile() {
+          try {
+            const jsonString = document.getElementById('backupTextarea').value;
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            
+            // Tentativo con URL.createObjectURL
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Oaxaca_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            
+            // Force click
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            
+            this.showNotification('✅ Download avviato!', 'success');
+            
+          } catch (error) {
+            console.error('Download error:', error);
+            this.showNotification('❌ Usa la copia negli appunti su Safari', 'error');
+          }
+        }
+
+        // Resto dei metodi invariati...
         setupRealTimeSaving() {
           const daysContainer = document.getElementById('daysContainer');
           
-          // Salva titoli dei giorni
           daysContainer.addEventListener('input', (e) => {
             if (e.target.classList.contains('day-title')) {
               const card = e.target.closest('.day-card');
               const dayId = card.dataset.id;
               const day = this.tripData.days.find(d => d.id === dayId);
-              if (day) {
-                day.title = e.target.value;
-              }
+              if (day) day.title = e.target.value;
             }
           });
 
-          // Salva contenuti delle sezioni
           daysContainer.addEventListener('blur', (e) => {
             if (e.target.classList.contains('editable')) {
               const card = e.target.closest('.day-card');
@@ -1162,43 +1283,9 @@
             }
           }, true);
 
-          // Gestione click su azioni
           daysContainer.addEventListener('click', (e) => this.handleDayActions(e));
         }
 
-        // CORREZIONE: Salvataggio manuale migliorato
-        manualSaveToJSON() {
-          try {
-            // Prima salva tutti i dati correnti
-            this.saveAllData();
-            
-            const dataToSave = {
-              ...this.tripData,
-              lastManualSave: new Date().toISOString()
-            };
-
-            const jsonString = JSON.stringify(dataToSave, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Oaxaca_Backup_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-            
-            this.showNotification('✅ Backup salvato con successo!', 'success');
-            
-          } catch (error) {
-            console.error('Errore salvataggio:', error);
-            this.showNotification('❌ Errore nel salvataggio', 'error');
-          }
-        }
-
-        // CORREZIONE: Salva tutti i dati prima dell'esportazione
         saveAllData() {
           const dayCards = document.querySelectorAll('.day-card');
           
@@ -1207,13 +1294,9 @@
             const day = this.tripData.days.find(d => d.id === dayId);
             if (!day) return;
 
-            // Salva titolo
             const titleInput = card.querySelector('.day-title');
-            if (titleInput) {
-              day.title = titleInput.value;
-            }
+            if (titleInput) day.title = titleInput.value;
 
-            // Salva contenuti delle sezioni
             const sections = ['places', 'accommodation', 'transport', 'notes'];
             sections.forEach(sectionType => {
               const sectionElement = card.querySelector(`.section.${sectionType}`);
@@ -1227,7 +1310,6 @@
           });
         }
 
-        // CORREZIONE: Gestione PDF su mobile
         dataURIToBlob(dataURI) {
           try {
             const byteString = atob(dataURI.split(',')[1]);
@@ -1244,7 +1326,6 @@
           }
         }
 
-        // Resto dei metodi della classe...
         showPlanner(){ 
           document.getElementById('introPage').style.display = 'none'; 
           document.getElementById('plannerContainer').style.display = 'block'; 
@@ -1402,12 +1483,10 @@
                if(att.type.includes('image')) {
                    this.openViewAttachmentModal(att);
                } else if(att.type.includes('pdf')) {
-                   // CORREZIONE: PDF su mobile
                    const blob = this.dataURIToBlob(att.data);
                    if (blob) {
                      const url = URL.createObjectURL(blob);
                      window.open(url, '_blank');
-                     // Pulizia dopo 10 secondi
                      setTimeout(() => URL.revokeObjectURL(url), 10000);
                    }
                }
@@ -1542,7 +1621,7 @@
             this.tripData = { 
               days: [], 
               background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
-              version: '2.1'
+              version: '2.2'
             };
             this.updateUI();
             this.showNotification('✅ Planner resettato con successo', 'success');
