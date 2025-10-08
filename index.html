@@ -1029,7 +1029,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 🔥 SISTEMA DI SALVATAGGIO AVANZATO CON CORREZIONI
+      // 🔥 SISTEMA DI SALVATAGGIO AVANZATO - UNIVERSALE
       class AdvancedPlanner {
         constructor() {
           this.tripData = { 
@@ -1044,6 +1044,8 @@
           this.autoSaveTimeout = null;
           this.autoSaveInterval = null;
           this.isStandaloneApp = this.detectStandaloneApp();
+          this.isSafari = this.detectSafari();
+          this.isMobile = this.detectMobile();
           
           this.init();
         }
@@ -1052,6 +1054,14 @@
           return window.navigator.standalone || 
                  window.matchMedia('(display-mode: standalone)').matches ||
                  document.referrer.includes('android-app://');
+        }
+
+        detectSafari() {
+          return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        }
+
+        detectMobile() {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         init() {
@@ -1123,6 +1133,132 @@
                   return 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
               }
           });
+        }
+
+        // 🔥 SISTEMA DI SALVATAGGIO UNIVERSALE - Chrome, Safari, Mobile
+        manualSaveToJSON() {
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastManualSave: new Date().toISOString(),
+              saveType: 'manual'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            
+            // 🔥 METODO UNIVERSALE per tutti i browser
+            if (navigator.msSaveBlob) {
+              // Per Internet Explorer
+              navigator.msSaveBlob(blob, 'Oaxaca_Planner_Backup.json');
+            } else if (this.isSafari || this.isMobile) {
+              // 🔥 METODO OTTIMIZZATO PER SAFARI E MOBILE
+              this.safariMobileDownload(blob, 'Oaxaca_Planner_Backup.json');
+            } else {
+              // 🔥 METODO STANDARD per Chrome e altri browser
+              this.standardDownload(blob, 'Oaxaca_Planner_Backup.json');
+            }
+
+            this.unsavedChanges = false;
+            this.updateStorageStatus('success', 'Backup manuale salvato!');
+            this.showNotification('✅ Backup manuale salvato con successo!', 'success');
+            
+          } catch (error) {
+            console.error('Errore salvataggio manuale:', error);
+            this.updateStorageStatus('danger', 'Errore nel salvataggio');
+            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
+          }
+        }
+
+        // 🔥 METODO STANDARD per Chrome e browser moderni
+        standardDownload(blob, filename) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          
+          document.body.appendChild(a);
+          a.click();
+          
+          // Pulizia ritardata
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+        }
+
+        // 🔥 METODO OTTIMIZZATO per Safari e dispositivi mobili
+        safariMobileDownload(blob, filename) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          
+          // Stile per Safari e Mobile
+          a.style.position = 'fixed';
+          a.style.left = '-1000px';
+          a.style.top = '-1000px';
+          a.style.opacity = '0';
+          
+          document.body.appendChild(a);
+          
+          // Forza il focus sulla pagina (importante per iOS)
+          window.focus();
+          
+          // Trigger del click
+          const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+          a.dispatchEvent(clickEvent);
+          
+          // 🔥 PULIZIA MOLTO RITARDATA per Safari (necessaria)
+          setTimeout(() => {
+            document.body.removeChild(a);
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 2000); // 2 secondi per Safari
+          }, 1000);
+        }
+
+        // 🔥 SALVATAGGIO AUTOMATICO con gestione browser
+        autoSaveToJSON() {
+          if (!this.unsavedChanges) return;
+
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastAutoSave: new Date().toISOString(),
+              saveType: 'auto'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = `Oaxaca_AutoBackup_${timestamp}.json`;
+            
+            // Disabilita salvataggio automatico su Safari mobile per evitare problemi
+            if (this.isSafari && this.isMobile) {
+              console.log('Salvataggio automatico disabilitato su Safari mobile');
+              return;
+            }
+            
+            if (this.isSafari) {
+              this.safariMobileDownload(blob, filename);
+            } else {
+              this.standardDownload(blob, filename);
+            }
+
+            this.unsavedChanges = false;
+            this.tripData.lastAutoSave = new Date().toISOString();
+            this.updateStorageStatus('success', 'Salvataggio automatico completato');
+            
+          } catch (error) {
+            console.error('Errore salvataggio automatico:', error);
+            this.updateStorageStatus('danger', 'Errore salvataggio automatico');
+          }
         }
 
         // 🔥 CORREZIONE: Metodo per aprire il modal sfondo
@@ -1207,107 +1343,6 @@
           this.updateStorageStatus('warning', 'Modifiche non salvate');
           this.saveToLocalStorage(true);
           this.renderAllDays(); 
-        }
-
-        // 🔥 CORREZIONE: manualSaveToJSON con gestione download migliorata
-        manualSaveToJSON() {
-          try {
-            const dataToSave = {
-              ...this.tripData,
-              lastManualSave: new Date().toISOString(),
-              saveType: 'manual'
-            };
-
-            const jsonString = JSON.stringify(dataToSave, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            
-            // Aggiungi un timestamp per rendere il nome unico
-            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-            a.download = `Oaxaca_Planner_${timestamp}.json`;
-            
-            // Aggiungi al DOM e triggera il download
-            document.body.appendChild(a);
-            a.click();
-            
-            // Pulizia ritardata per assicurarsi che il download parta
-            setTimeout(() => {
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }, 100);
-
-            this.unsavedChanges = false;
-            this.updateStorageStatus('success', 'Backup manuale salvato!');
-            this.showNotification('✅ Backup manuale salvato con successo!', 'success');
-            
-          } catch (error) {
-            console.error('Errore salvataggio manuale:', error);
-            this.updateStorageStatus('danger', 'Errore nel salvataggio');
-            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
-          }
-        }
-
-        // 🔥 SISTEMA DI SALVATAGGIO AUTOMATICO AVANZATO
-        startAutoSaveSystem() {
-          // Salvataggio automatico ogni 2 minuti
-          this.autoSaveInterval = setInterval(() => {
-            if (this.unsavedChanges) {
-              this.autoSaveToJSON();
-            }
-          }, 120000);
-
-          // Salvataggio ritardato dopo modifiche (30 secondi di inattività)
-          let delayTimer;
-          const scheduleSave = () => {
-            clearTimeout(delayTimer);
-            delayTimer = setTimeout(() => {
-              if (this.unsavedChanges) {
-                this.autoSaveToJSON();
-              }
-            }, 30000);
-          };
-
-          document.addEventListener('input', scheduleSave);
-          document.addEventListener('change', scheduleSave);
-        }
-
-        autoSaveToJSON() {
-          if (!this.unsavedChanges) return;
-
-          try {
-            const dataToSave = {
-              ...this.tripData,
-              lastAutoSave: new Date().toISOString(),
-              saveType: 'auto'
-            };
-
-            const jsonString = JSON.stringify(dataToSave, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            
-            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-            a.download = `Oaxaca_AutoBackup_${timestamp}.json`;
-            
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }, 100);
-
-            this.unsavedChanges = false;
-            this.tripData.lastAutoSave = new Date().toISOString();
-            this.updateStorageStatus('success', 'Salvataggio automatico completato');
-            
-          } catch (error) {
-            console.error('Errore salvataggio automatico:', error);
-            this.updateStorageStatus('danger', 'Errore salvataggio automatico');
-          }
         }
 
         forceAutoSave() {
@@ -1659,6 +1694,27 @@
               this.showNotification('Errore nella lettura del file.', 'error');
           };
           reader.readAsText(file);
+        }
+
+        startAutoSaveSystem() {
+          this.autoSaveInterval = setInterval(() => {
+            if (this.unsavedChanges) {
+              this.autoSaveToJSON();
+            }
+          }, 120000);
+
+          let delayTimer;
+          const scheduleSave = () => {
+            clearTimeout(delayTimer);
+            delayTimer = setTimeout(() => {
+              if (this.unsavedChanges) {
+                this.autoSaveToJSON();
+              }
+            }, 30000);
+          };
+
+          document.addEventListener('input', scheduleSave);
+          document.addEventListener('change', scheduleSave);
         }
       }
 
