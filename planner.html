@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>OAXACA 2025 - Planner</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ff0000">
+  
+  <link rel="manifest" href="/MEXICO-2025/manifest.json">
+  <link rel="apple-touch-icon" href="/MEXICO-2025/icon-512.png">
+  <link rel="icon" type="image/png" href="/MEXICO-2025/icon-192.png" sizes="192x192">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-image: url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80');
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    #background-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: -1;
+      transition: background-image .5s ease;
+    }
+
+    /* Intro */
+    .intro-page {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .intro-title {
+      font-family: 'Special Elite', cursive;
+      color: #ff0000;
+      font-size: clamp(3rem, 12vw, 8rem);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,.3);
+    }
+    
+    .intro-buttons {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 90%;
+      max-width: 500px;
+    }
+    
+    .start-btn, .bg-btn {
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      border: 1px solid #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all .3s;
+      font-family: 'Oswald', sans-serif;
+      min-width: 180px;
+      justify-content: center;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      backdrop-filter: blur(4px); /* CORREZIONE: Aggiunto punto e virgola mancante */
+    }
+    
+    .start-btn:hover, .bg-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* App */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: none;
+      overflow: visible;
+    }
+    
+    .planner-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      flex-wrap: wrap;
+      background: transparent;
+    }
+    
+    .planner-title {
+      font-family: 'Special Elite', cursive;
+      color: #ff0000;
+      font-size: 2.5rem;
+      margin: 0;
+      text-shadow: 1px 1px 2px rgba(0,0,0,.3);
+      flex: 1;
+    }
+    
+    .header-right-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      min-width: 250px;
+    }
+    
+    .header-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    
+    .add-day-btn, .dropdown-btn {
+      background: rgba(255,255,255,.9);
+      color: #000;
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-size: .9rem;
+      transition: all .3s;
+      font-family: 'Oswald', sans-serif;
+    }
+    
+    .add-day-btn:hover, .dropdown-btn:hover {
+      background: rgba(0,0,0,.1);
+      transform: translateY(-2px);
+    }
+
+    /* Dropdown */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: #fff;
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,.2);
+      z-index: 10000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+    }
+    
+    .dropdown-content a {
+      color: #000;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color .3s;
+      font-size: .9rem;
+    }
+    
+    .dropdown-content a:hover {
+      background: #f1f1f1;
+    }
+    
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .days-container {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    
+    .day-card {
+      background: rgba(255,255,255,.9);
+      border-radius: 15px;
+      padding: 25px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.5);
+      box-shadow: 0 5px 15px rgba(0,0,0,.1);
+      backdrop-filter: blur(5px);
+      transition: transform .3s, box-shadow .3s;
+    }
+    
+    .day-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,.15);
+    }
+    
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(0,0,0,.1);
+    }
+    
+    .day-date-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .day-date {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .3s;
+      border: 1px dashed transparent;
+      cursor: pointer;
+    }
+    
+    .day-date:hover {
+      background: rgba(0,0,0,.05);
+    }
+
+    .day-date input[data-input] {
+        font-family: 'Oswald', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000;
+        background: transparent;
+        border: none;
+        padding: 0;
+        width: 110px; 
+        cursor: pointer;
+    }
+
+    .day-date input[data-input]:focus {
+        outline: none;
+    }
+
+    .day-date .fa-calendar[data-toggle] {
+        cursor: pointer;
+    }
+    
+    .day-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #555;
+      background: rgba(255,255,255,.7);
+      padding: 4px 10px;
+      border-radius: 12px;
+     border: none;
+      outline: none;
+      width: auto;
+      min-width: 120px;
+    }
+    
+    .day-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .delete-day, .drag-handle {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 1.2rem;
+      background: rgba(255,255,255,.7);
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .3s;
+    }
+    
+    .delete-day:hover {
+      color: #e74c3c;
+      background: rgba(255,255,255,.9);
+    }
+    
+    .drag-handle {
+      cursor: grab;
+    }
+    
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .day-content {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .section {
+      padding: 20px;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,.08);
+      transition: transform .3s;
+    }
+    
+    .section:hover {
+      transform: translateY(-3px);
+    }
+    
+    .section.places { background: rgba(173,216,230,.8); }
+    .section.accommodation { background: rgba(255,182,193,.8); }
+    .section.transport { background: rgba(144,238,144,.8); }
+    .section.notes { background: rgba(255,255,153,.8); }
+    
+    .section-title {
+      font-family: 'Special Elite', cursive;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #000;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      border-bottom: 2px solid rgba(0,0,0,.1);
+      padding-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .section-content {
+      padding: 15px;
+      border: 1px dashed rgba(0,0,0,.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,.5);
+    }
+    
+    .editable {
+      min-height: 80px;
+      padding: 10px;
+      outline: none;
+      width: 100%;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .editable a {
+        color: #0066cc;
+        text-decoration: underline;
+    }
+
+    .file-attachments {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .attachment-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 8px;
+      background: rgba(255,255,255,.8);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.5);
+      cursor: pointer;
+      transition: all .2s;
+      width: 100px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .attachment-item:hover {
+      background: #fff;
+      transform: translateY(-2px);
+    }
+    
+    .attachment-thumbnail {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px; 
+      color: #7F8C8D;
+    }
+    
+    .attachment-thumbnail .fa-file-pdf {
+      color: #e74c3c; 
+      font-size: 36px;
+    }
+
+    .attachment-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    
+    .attachment-name {
+      font-size: .7rem;
+      color: #000;
+      word-break: break-all;
+      width: 100%;
+    }
+    
+    .delete-attachment-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .attachment-item:hover .delete-attachment-btn {
+      display: flex;
+    }
+    
+    .add-attachment-btn {
+      background: none;
+      border: none;
+      color: #7F8C8D;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: .9rem;
+      margin-top: 10px;
+      transition: all .2s;
+      padding: 5px;
+    }
+    
+    .add-attachment-btn:hover {
+      color: #2980B9;
+    }
+
+    /* Storage Status */
+    .storage-status {
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid #28a745;
+    }
+
+    .storage-status.warning {
+      border-left-color: #ffc107;
+      background: rgba(255,193,7,0.1);
+    }
+
+    .storage-status.danger {
+      border-left-color: #dc3545;
+      background: rgba(220,53,69,0.1);
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,.7);
+      z-index: 5000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 5px 25px rgba(0,0,0,.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-title {
+      font-family: 'Special Elite', cursive;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    .bg-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .bg-option {
+      height: 100px;
+      border-radius: 8px;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid transparent;
+      transition: all .3s;
+    }
+    
+    .bg-option:hover {
+      transform: scale(1.05);
+    }
+    
+    .bg-option.selected {
+      border-color: #000;
+    }
+
+    .file-input-container {
+      margin-top: 15px;
+      position: relative;
+    }
+    
+    .file-input-label {
+      display: block;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    
+    .file-input-label:hover {
+      background: #e0e0e0;
+    }
+    
+    .file-input {
+      position: absolute;
+      left: -9999px;
+    }
+    
+    .custom-bg-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .modal-btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 500;
+      border: 1px solid #000;
+      background: transparent;
+      transition: all .3s;
+      min-width: 100px;
+    }
+    
+    .modal-btn.primary {
+      background: #000;
+      color: #fff;
+    }
+    
+    .modal-btn:hover {
+      background: rgba(0,0,0,.1);
+    }
+    
+    .modal-btn.primary:hover {
+      background: #333;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: #fff;
+      font-size: .9rem;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      background: #333;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 6000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .fullscreen-attachment {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      cursor: pointer;
+      padding: 20px; 
+    }
+    
+    .fullscreen-attachment img {
+      max-width: 95%;  
+      max-height: 95%;
+      object-fit: contain;
+    }
+    
+    .close-fullscreen {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+    }
+
+    /* Print */
+    @media print {
+      * {
+        color: #000 !important;
+        background-color: #fff !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      
+      #background-layer, .intro-page, .planner-header .header-right-section, .day-actions, .add-attachment-btn, footer, .notification, .modal, #storage-status {
+        display: none !important;
+      }
+      
+      body {
+        font-family: 'Times New Roman', serif;
+      }
+      
+      .container {
+        display: block !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .day-card {
+        border: 1px solid #ccc !important;
+        padding: 15px !important;
+        margin-bottom: 20px;
+        break-inside: avoid;
+      }
+
+      .day-content {
+        display: block !important;
+      }
+      
+      .section {
+         border: 1px solid #eee !important;
+         padding: 10px;
+         margin-bottom: 10px;
+         break-inside: avoid;
+      }
+
+      .editable a {
+        text-decoration: underline !important;
+      }
+      
+      .file-attachments {
+        display: none !important;
+      }
+    }
+
+    /* iPhone e dispositivi mobili */
+    @media (max-width: 768px) {
+      .intro-buttons {
+        flex-direction: column;
+      }
+      
+      .day-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .planner-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding: 15px;
+      }
+      
+      .planner-title {
+        font-size: 1.8rem;
+        text-align: center;
+        width: 100%;
+      }
+      
+      .header-right-section {
+        width: 100%;
+        align-items: flex-start;
+      }
+      
+      .header-buttons {
+        justify-content: space-between;
+        width: 100%;
+      }
+      
+      .add-day-btn, .dropdown-btn {
+        padding: 10px 15px;
+        font-size: 0.85rem;
+        min-height: 44px;
+      }
+      
+      .day-card {
+        padding: 20px 15px;
+        border-radius: 12px;
+      }
+      
+      .day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      
+      .day-date-container {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .day-date input.flatpickr-input {
+        font-family: 'Oswald', sans-serif !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+      }
+      
+      .day-actions {
+        align-self: flex-end;
+      }
+      
+      .section {
+        padding: 15px;
+      }
+      
+      .section-title {
+        font-size: 1.1rem;
+      }
+      
+      .section-content {
+        padding: 12px;
+      }
+      
+      .modal-content {
+        padding: 20px;
+        width: 95%;
+        margin: 20px;
+      }
+      
+      .bg-options {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-buttons {
+        flex-direction: column;
+      }
+      
+      .modal-btn {
+        width: 100%;
+      }
+      
+      .dropdown-content {
+        right: auto;
+        left: 0;
+        min-width: 200px;
+      }
+      
+      .file-attachments {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+      
+      .attachment-item {
+        width: 85px;
+        flex-shrink: 0;
+      }
+      
+      .attachment-thumbnail {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .attachment-name {
+        font-size: .7rem;
+        color: #000;
+        word-break: break-all;
+        width: 100%;
+      }
+      
+      .delete-attachment-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ff0000;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .attachment-item:hover .delete-attachment-btn {
+        display: flex;
+      }
+      
+      .add-attachment-btn {
+        background: none;
+        border: none;
+        color: #7F8C8D;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: .9rem;
+        margin-top: 10px;
+        transition: all .2s;
+        padding: 5px;
+      }
+      
+      .add-attachment-btn:hover {
+        color: #2980B9;
+      }
+
+      footer {
+        margin-top: 30px;
+        padding: 15px;
+        font-size: 0.8rem;
+      }
+      
+      input, select, textarea {
+        font-size: 16px;
+      }
+      
+      .editable:focus {
+        font-size: 16px;
+      }
+      
+    }
+
+    /* Supporto per notch e aree sicure iPhone */
+    @supports(padding: max(0px)) {
+      .intro-page, .container, .modal {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+      
+      .intro-buttons {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+      
+      body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      
+      .planner-header, .day-card {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="background-layer"></div>
+    <div class="intro-page" id="introPage">
+    <h1 class="intro-title">OAXACA 2025</h1>
+    <div class="intro-buttons">
+      <button class="start-btn" id="startBtn"><i class="fas fa-pencil-alt"></i> Inizia a pianificare</button>
+      <button class="bg-btn" id="bgBtn"><i class="fas fa-image"></i> Sfondo</button>
+    </div>
+  </div>
+
+    <div class="container" id="plannerContainer">
+    <div class="planner-header">
+      <h1 class="planner-title" id="dynamicTitle">OAXACA 2025</h1>
+      <div class="header-right-section">
+        <div class="header-buttons">
+          <button class="add-day-btn" id="addDayBtn"><i class="fas fa-plus"></i> Aggiungi Giorno</button>
+          <div class="dropdown">
+            <button class="dropdown-btn" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
+            <div class="dropdown-content" role="menu">
+              <a href="#" id="saveBtn"><i class="fas fa-save"></i> Salva Backup Manuale</a>
+              <a href="#" id="autoSaveBtn"><i class="fas fa-sync"></i> Salva Backup Automatico</a>
+              <a href="#" id="importBtn"><i class="fas fa-upload"></i> Importa Backup</a>
+              <a href="#" id="printBtn"><i class="fas fa-print"></i> Stampa</a>
+              <a href="#" id="resetBtn"><i class="fas fa-trash"></i> Reset Planner</a>
+              <a href="#" id="backgroundBtn"><i class="fas fa-image"></i> Sfondo</a>
+              <a href="#" id="homeBtn"><i class="fas fa-home"></i> Home</a>
+            </div>
+          </div>
+        </div>
+        <div class="storage-status" id="storageStatus">
+          <i class="fas fa-check-circle"></i>
+          <span id="storageStatusText">Tutto salvato</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="days-container" id="daysContainer"></div>
+
+    <footer><p>OAXACA 2025 &copy; - Salvataggio automatico su file JSON attivo</p></footer>
+  </div>
+
+    <div class="modal" id="backgroundModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Seleziona Sfondo</h2>
+      <div class="bg-options" id="bgOptions">
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1518638150340-f706e_86654de?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1520942702014-8f2a5e7b74c3?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1542272454315-4db10c9c42a5?auto=format&fit=crop&w=1500&q=80"></div>
+        <div class="bg-option" style="background-image:url('https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=500&q=80');" data-bg="https://images.unsplash.com/photo-1623051162674-4d16f16f50d8?auto=format&fit=crop&w=1500&q=80"></div>
+      </div>
+      <div class="file-input-container">
+        <label for="bgFileInput" class="file-input-label"><i class="fas fa-upload"></i> Carica immagine</label>
+        <input type="file" id="bgFileInput" class="file-input" accept="image/*" />
+      </div>
+      <input type="text" class="custom-bg-input" id="customBgInput" placeholder="Incolla URL immagine" />
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelBgBtn">Annulla</button>
+        <button class="modal-btn primary" id="applyBgBtn">Applica</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="attachmentModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Aggiungi Allegato</h2>
+      <div class="file-input-container">
+        <label for="attachmentFileInput" class="file-input-label"><i class="fas fa-upload"></i> Carica file (Immagine/PDF)</label>
+        <input type="file" id="attachmentFileInput" class="file-input" accept="image/*,.pdf" />
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelAttachBtn">Annulla</button>
+        <button class="modal-btn primary" id="confirmAttachBtn">Aggiungi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmModal">
+    <div class="modal-content">
+      <h2 class="modal-title" id="confirmModalTitle"></h2>
+      <p id="confirmModalText" style="text-align: center; margin-bottom: 20px;"></p>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="cancelConfirmBtn">Annulla</button>
+        <button class="modal-btn primary" id="confirmBtn">Conferma</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification">
+    <i id="notificationIcon" class="fas fa-check-circle"></i>
+    <span id="notificationText"></span>
+  </div>
+
+  <input type="file" id="importFileInput" style="display: none;" accept=".json" />
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      class AdvancedPlanner {
+        constructor() {
+          this.tripData = { 
+            days: [], 
+            background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
+            lastAutoSave: null,
+            version: '2.0'
+          };
+          this.currentAttachmentContext = {};
+          this.onConfirmCallback = null;
+          this.unsavedChanges = false;
+          this.autoSaveTimeout = null;
+          this.autoSaveInterval = null;
+          this.isStandaloneApp = this.detectStandaloneApp();
+          this.isSafari = this.detectSafari();
+          this.isMobile = this.detectMobile();
+          this.isPrivateMode = false;
+          
+          this.init();
+        }
+
+        detectStandaloneApp() {
+          return window.navigator.standalone || 
+                 window.matchMedia('(display-mode: standalone)').matches ||
+                 document.referrer.includes('android-app://');
+        }
+
+        detectSafari() {
+          // Rileva Safari escludendo Chrome/Edge su iOS
+          return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        }
+
+        detectMobile() {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        async checkPrivateMode() {
+          return new Promise((resolve) => {
+            try {
+              localStorage.setItem('private_mode_test', 'test');
+              localStorage.removeItem('private_mode_test');
+              this.isPrivateMode = false;
+              resolve(false);
+            } catch (e) {
+              this.isPrivateMode = true;
+              resolve(true);
+            }
+          });
+        }
+
+        async init() {
+          await this.checkPrivateMode();
+          this.loadFromLocalStorage();
+          this.setupEventListeners();
+          this.startAutoSaveSystem();
+          this.showAppWarningIfNeeded();
+          
+          if (this.isPrivateMode) {
+            this.showNotification('⚠️ Modalità privata rilevata. I dati non verranno salvati.', 'warning');
+          }
+        }
+
+        showAppWarningIfNeeded() {
+          if (this.isStandaloneApp) {
+            this.showNotification('⚠️ ATTENZIONE: Stai usando la versione app. Salva spesso i backup manualmente!', 'error', 8000);
+          }
+        }
+
+        setupEventListeners() {
+          document.getElementById('startBtn').addEventListener('click', () => this.showPlanner());
+          document.getElementById('bgBtn').addEventListener('click', () => this.openBackgroundModal());
+          document.getElementById('backgroundBtn').addEventListener('click', () => this.openBackgroundModal());
+          document.getElementById('homeBtn').addEventListener('click', () => this.showIntro());
+          document.getElementById('addDayBtn').addEventListener('click', () => this.addNewDay());
+          
+          // Pulsanti salvataggio
+          document.getElementById('saveBtn').addEventListener('click', () => this.manualSaveToJSON());
+          document.getElementById('autoSaveBtn').addEventListener('click', () => this.forceAutoSave());
+          document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+          document.getElementById('importFileInput').addEventListener('change', (e) => this.handleImport(e));
+          document.getElementById('printBtn').addEventListener('click', () => window.print());
+          document.getElementById('resetBtn').addEventListener('click', () => this.resetPlanner());
+
+          // Modal Buttons
+          document.querySelectorAll('.modal .modal-btn[id^="cancel"]').forEach(btn => {
+              btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
+          });
+          
+          document.getElementById('applyBgBtn').addEventListener('click', () => this.applyBackground());
+          document.getElementById('confirmAttachBtn').addEventListener('click', () => this.handleAttachmentConfirm());
+
+          // Background Modal
+          document.getElementById('bgOptions').addEventListener('click', (e) => {
+            const target = e.target.closest('.bg-option');
+            if(!target) return;
+            document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+            target.classList.add('selected');
+          });
+
+          // Confirmation Modal
+          document.getElementById('confirmBtn').addEventListener('click', () => {
+              if(typeof this.onConfirmCallback === 'function') this.onConfirmCallback();
+              this.closeModal('confirmModal');
+          });
+          document.getElementById('cancelConfirmBtn').addEventListener('click', () => this.closeModal('confirmModal'));
+
+          // Event Delegation for dynamic content
+          const daysContainer = document.getElementById('daysContainer');
+          daysContainer.addEventListener('blur', (e) => {
+              if (e.target.classList.contains('editable')) {
+                  this.autolinkUrls(e.target);
+                  this.handleDataChange(e);
+              }
+          }, true);
+          daysContainer.addEventListener('input', (e) => this.handleDataChange(e));
+          daysContainer.addEventListener('click', (e) => this.handleDayActions(e));
+          
+          window.addEventListener('beforeunload', (e) => {
+              if (this.unsavedChanges) {
+                  e.preventDefault();
+                  e.returnValue = 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
+                  return 'Hai delle modifiche non salvate. Sei sicuro di voler lasciare la pagina? I dati potrebbero andare persi.';
+              }
+          });
+        }
+        
+        /**
+         * ✅ SALVATAGGIO MANUALE
+         * Questa funzione crea un link invisibile e lo clicca per avviare il download.
+         * È il metodo più affidabile per tutti i browser, incluso Safari.
+         */
+        manualSaveToJSON() {
+          try {
+            const dataToSave = {
+              ...this.tripData,
+              lastManualSave: new Date().toISOString(),
+              saveType: 'manual'
+            };
+
+            const jsonString = JSON.stringify(dataToSave, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = `Oaxaca_Planner_${timestamp}.json`;
+
+            this.downloadBlob(blob, filename);
+
+            this.unsavedChanges = false;
+            this.updateStorageStatus('success', 'Backup manuale salvato!');
+            this.showNotification('✅ Backup salvato con successo!', 'success');
+            
+          } catch (error) {
+            console.error('Errore salvataggio manuale:', error);
+            this.updateStorageStatus('danger', 'Errore nel salvataggio');
+            this.showNotification('❌ Errore nel salvataggio del backup', 'error');
+          }
+        }
+
+        /**
+         * ⚙️ FUNZIONE DI UTILITY PER IL DOWNLOAD
+         * Logica di download centralizzata per essere riutilizzata.
+         */
+        downloadBlob(blob, filename) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          
+          // Pulizia per evitare memory leak
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            if (document.body.contains(a)) {
+              document.body.removeChild(a);
+            }
+          }, 100);
+        }
+        
+        /**
+         * 🔄 SALVATAGGIO AUTOMATICO
+         * MODIFICA: Rileva Safari e, in quel caso, salva solo su localStorage mostrando
+         * una notifica. Altrimenti, procede con il download del file.
+         */
+        autoSaveToJSON() {
+            if (!this.unsavedChanges) return;
+
+            if (this.isPrivateMode) {
+                console.warn('Salvataggio automatico disabilitato in modalità privata.');
+                return;
+            }
+
+            try {
+                // NOTA: Se il browser è Safari, salva solo localmente senza scaricare file.
+                if (this.isSafari) {
+                    this.saveToLocalStorage();
+                    this.unsavedChanges = false;
+                    this.tripData.lastAutoSave = new Date().toISOString();
+                    this.updateStorageStatus('success', `Salvato in cache alle ${new Date().toLocaleTimeString()}`);
+                    this.showNotification('ℹ️ Su Safari i dati sono salvati nella cache. Salva manualmente per un backup!', 'info', 6000);
+                    return;
+                }
+
+                // Per altri browser, procede al download del file.
+                const dataToSave = {
+                    ...this.tripData,
+                    lastAutoSave: new Date().toISOString(),
+                    saveType: 'auto'
+                };
+
+                const jsonString = JSON.stringify(dataToSave, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const filename = `Oaxaca_AutoBackup_${timestamp}.json`;
+                
+                this.downloadBlob(blob, filename);
+                
+                this.unsavedChanges = false;
+                this.tripData.lastAutoSave = new Date().toISOString();
+                this.updateStorageStatus('success', 'Salvataggio automatico completato');
+                this.showNotification('✅ Backup automatico salvato!', 'success');
+
+            } catch (error) {
+                console.error('Errore salvataggio automatico:', error);
+                this.updateStorageStatus('danger', 'Errore salvataggio automatico');
+                this.saveToLocalStorage(); // Tenta almeno di salvare su localStorage in caso di errore
+                this.showNotification('⚠️ Errore download, dati salvati in cache.', 'warning');
+            }
+        }
+
+        saveToLocalStorage(forceNotification = false) {
+          try {
+            if (this.isPrivateMode) {
+              return false; // Non salvare in modalità privata
+            }
+            
+            localStorage.setItem('oaxacaPlannerData', JSON.stringify(this.tripData));
+            if(forceNotification) {
+                this.showNotification('Modifiche salvate nella cache del browser!', 'success');
+            }
+            return true;
+          } catch (e) {
+            console.error('Errore salvataggio localStorage:', e);
+            this.showNotification('Cache del browser piena! Usa "Salva Backup" per salvare su file.', 'error');
+            return false;
+          }
+        }
+
+        loadFromLocalStorage() {
+          try {
+            const saved = localStorage.getItem('oaxacaPlannerData');
+            if(saved) {
+              const parsedData = JSON.parse(saved);
+              if(parsedData && Array.isArray(parsedData.days)) {
+                this.tripData = { ...this.tripData, ...parsedData };
+              }
+            }
+            this.updateUI();
+          } catch(e) {
+            console.error('Errore caricamento dati:', e);
+            this.showNotification('Errore nel caricamento dei dati salvati', 'error');
+          }
+        }
+
+        // --- Il resto dei metodi rimane invariato ---
+
+        openBackgroundModal() {
+            document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('customBgInput').value = '';
+            document.getElementById('bgFileInput').value = '';
+            this.openModal('backgroundModal');
+        }
+
+        applyBackground() {
+            const selectedOption = document.querySelector('.bg-option.selected');
+            const customUrl = document.getElementById('customBgInput').value.trim();
+            const fileInput = document.getElementById('bgFileInput');
+
+            if (customUrl) {
+                this.updateBg(customUrl);
+            } else if (selectedOption) {
+                this.updateBg(selectedOption.dataset.bg);
+            } else if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.updateBg(e.target.result);
+                };
+                reader.onerror = () => {
+                    this.showNotification('❌ Errore nel caricamento del file', 'error');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                this.showNotification('❌ Seleziona uno sfondo o inserisci un URL', 'error');
+            }
+        }
+
+        updateBg(newBg) {
+            this.tripData.background = newBg;
+            document.documentElement.style.setProperty('--bg-image', `url('${newBg}')`);
+            this.handleDataChange();
+            this.closeModal('backgroundModal');
+            this.showNotification('✅ Sfondo cambiato con successo!', 'success');
+        }
+
+        addNewDay() {
+            let nextDate = new Date();
+            
+            if (this.tripData.days.length > 0) {
+              const lastDay = this.tripData.days[this.tripData.days.length - 1];
+              if (lastDay.date) {
+                nextDate = this.parseDate(lastDay.date) || new Date();
+                nextDate.setDate(nextDate.getDate() + 1);
+              }
+            }
+            
+            const newDay = { 
+              id: `day_${Date.now()}`, 
+              date: this.formatDate(nextDate), 
+              title: `Giorno ${this.tripData.days.length + 1}`,
+              places: { text: '', attachments: [] },
+              accommodation: { text: '', attachments: [] },
+              transport: { text: '', attachments: [] },
+              notes: { text: '', attachments: [] }
+            };
+            
+            this.tripData.days.push(newDay); 
+            this.handleDataChange();
+            this.renderAllDays(); 
+        }
+
+        forceAutoSave() {
+            this.showNotification('🔄 Salvataggio forzato in corso...', 'info');
+            this.autoSaveToJSON();
+        }
+
+        updateStorageStatus(type, message) {
+            const statusElement = document.getElementById('storageStatus');
+            const textElement = document.getElementById('storageStatusText');
+            
+            statusElement.className = 'storage-status';
+            if (type === 'warning') statusElement.classList.add('warning');
+            if (type === 'danger') statusElement.classList.add('danger');
+            
+            textElement.textContent = message;
+            
+            const icon = statusElement.querySelector('i');
+            icon.className = type === 'success' ? 'fas fa-check-circle' :
+                             type === 'warning' ? 'fas fa-exclamation-triangle' :
+                             'fas fa-exclamation-circle';
+        }
+
+        handleDataChange(e) {
+            if (e) {
+                const target = e.target;
+                const card = target.closest('.day-card');
+                if (card) {
+                    const day = this.tripData.days.find(d => d.id === card.dataset.id);
+                    if (day) {
+                        if (target.classList.contains('editable')) {
+                            const type = target.closest('.section').classList[1];
+                            day[type].text = target.innerHTML;
+                        } else if (target.classList.contains('day-title')) {
+                            day.title = target.value;
+                        }
+                    }
+                }
+            }
+            
+            this.unsavedChanges = true;
+            this.updateStorageStatus('warning', 'Modifiche non salvate');
+            this.saveToLocalStorage();
+        }
+
+        showPlanner(){ 
+          document.getElementById('introPage').style.display = 'none'; 
+          document.getElementById('plannerContainer').style.display = 'block'; 
+          this.updateUI();
+        }
+        
+        showIntro(){ 
+          document.getElementById('plannerContainer').style.display = 'none'; 
+          document.getElementById('introPage').style.display = 'flex'; 
+        }
+
+        updateUI() {
+          document.documentElement.style.setProperty('--bg-image', `url('${this.tripData.background}')`);
+          this.renderAllDays();
+          if (this.tripData.days && this.tripData.days.length > 0) {
+            this.showPlanner();
+          }
+        }
+
+        renderAllDays(){
+          const daysContainer = document.getElementById('daysContainer');
+          daysContainer.innerHTML = '';
+          this.tripData.days.forEach((d, index) => daysContainer.appendChild(this.createDayCard(d, index)));
+        }
+
+        createDayCard(day, index){
+          const card = document.createElement('div');
+          card.className = 'day-card';
+          card.dataset.id = day.id;
+          
+          let displayTitle = day.title || `Giorno ${index + 1}`;
+          
+          card.innerHTML = `
+            <div class="day-header">
+              <div class="day-date-container">
+                <div class="day-date">
+                  <i class="fa-regular fa-calendar" data-toggle></i>
+                  <input type="text" placeholder="Seleziona data..." data-input readonly="readonly" />
+                </div>
+                <input type="text" class="day-title" value="${displayTitle}" placeholder="Titolo giorno" />
+              </div>
+              <div class="day-actions">
+                <button class="delete-day" title="Elimina"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="day-content">
+              ${this.createSection('places','Luoghi', day)}
+              ${this.createSection('accommodation','Alloggio', day)}
+              ${this.createSection('transport','Trasporti', day)}
+              ${this.createSection('notes','Note', day)}
+            </div>`;
+
+          flatpickr(card.querySelector('.day-date'), {
+              wrap: true,
+              locale: 'it',
+              dateFormat: 'd/m/Y',
+              defaultDate: this.parseDate(day.date),
+              onChange: (selectedDates, dateStr) => { 
+                day.date = dateStr;
+                this.handleDataChange(); 
+              }
+          });
+          
+          return card;
+        }
+
+        createSection(type, title, day){
+          const sectionData = day[type] || { text: '', attachments: [] };
+          const attachmentsHTML = (sectionData.attachments || []).map((att, i) => this.createAttachmentHTML(att, i)).join('');
+          
+          const icons = { places: 'map-marker-alt', accommodation: 'hotel', transport: 'bus', notes: 'sticky-note' };
+          return `
+            <div class="section ${type}">
+              <h3 class="section-title"><i class="fas fa-${icons[type]}"></i> ${title}</h3>
+              <div class="section-content">
+                <div class="editable" contenteditable="true">${sectionData.text}</div>
+                <div class="file-attachments">${attachmentsHTML}</div>
+                <button class="add-attachment-btn"><i class="fas fa-paperclip"></i> Aggiungi</button>
+              </div>
+            </div>`;
+        }
+
+        createAttachmentHTML(att, index) {
+            return `
+              <div class="attachment-item" data-index="${index}">
+                <div class="attachment-thumbnail">${att.type.includes('image') ? `<img src="${att.data}" alt="${att.name}">` : `<i class='fas fa-file-pdf'></i>`}</div>
+                <div class="attachment-name">${att.name}</div>
+                <button class="delete-attachment-btn">&times;</button>
+              </div>`;
+        }
+
+        parseDate(s){ 
+          if(!s) return null; 
+          const p = s.split('/'); 
+          return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
+        }
+
+        formatDate(d){ 
+          return d ? `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}` : ''; 
+        }
+
+        autolinkUrls(element) {
+            // Semplice regex per trovare URL, evitando di linkare URL già in un tag <a>
+            const urlRegex = /(?<!href=")(https?:\/\/[^\s<]+[^\s<.,!?"')\];])/g;
+            let html = element.innerHTML;
+            
+            if (html.includes('<a href')) return;
+
+            html = html.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+            
+            if (html !== element.innerHTML) {
+                element.innerHTML = html;
+            }
+        }
+
+        handleDayActions(e){
+          const target = e.target;
+          const button = target.closest('button');
+          const item = target.closest('.attachment-item');
+          const link = target.closest('a');
+
+          if (link && link.href) {
+              e.preventDefault();
+              window.open(link.href, '_blank');
+              return;
+          }
+
+          if (button) {
+              const dayCard = button.closest('.day-card');
+              if (!dayCard) return;
+              const day = this.tripData.days.find(d => d.id === dayCard.dataset.id);
+              if (!day) return;
+
+              if (button.classList.contains('delete-day')) { 
+                  this.showConfirmModal('Eliminare Giorno?', `Sei sicuro di voler eliminare "${day.title}"?`, () => {
+                      this.tripData.days = this.tripData.days.filter(d => d.id !== day.id);
+                      this.handleDataChange();
+                      this.renderAllDays();
+                  });
+              } else if (button.classList.contains('add-attachment-btn')) { 
+                  this.currentAttachmentContext = { day, type: button.closest('.section').classList[1] };
+                  document.getElementById('attachmentFileInput').value = '';
+                  this.openModal('attachmentModal');
+              } else if (button.classList.contains('delete-attachment-btn')) {
+                  const attachmentItem = button.closest('.attachment-item');
+                  const index = parseInt(attachmentItem.dataset.index);
+                  const section = day[attachmentItem.closest('.section').classList[1]];
+                  section.attachments.splice(index, 1);
+                  this.handleDataChange();
+                  this.renderAllDays();
+              }
+          } else if (item) {
+               const dayCard = item.closest('.day-card');
+               if(!dayCard) return;
+               const day = this.tripData.days.find(d => d.id === dayCard.dataset.id);
+               const index = parseInt(item.dataset.index);
+               const sectionType = item.closest('.section').classList[1];
+               const att = day[sectionType].attachments[index];
+               if(att.type.includes('image')) {
+                   this.openViewAttachmentModal(att);
+               } else if(att.type.includes('pdf')) {
+                   const blob = this.dataURIToBlob(att.data);
+                   const url = URL.createObjectURL(blob);
+                   window.open(url, '_blank');
+               }
+          }
+        }
+        
+        handleAttachmentConfirm(){ 
+          const fileInput = document.getElementById('attachmentFileInput');
+          const file = fileInput.files[0];
+          if(!file) return this.showNotification('Nessun file selezionato', 'error');
+
+          const reader = new FileReader(); 
+          reader.onload = (e) => { 
+            const { day, type } = this.currentAttachmentContext;
+            if (!day[type].attachments) day[type].attachments = [];
+            day[type].attachments.push({ 
+              name: file.name, 
+              type: file.type, 
+              data: e.target.result 
+            }); 
+            this.handleDataChange(); 
+            this.renderAllDays(); 
+            this.closeModal('attachmentModal');
+          }; 
+          reader.readAsDataURL(file); 
+        }
+        
+        dataURIToBlob(dataURI) {
+          const byteString = atob(dataURI.split(',')[1]);
+          const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+          }
+          return new Blob([ab], { type: mimeString });
+        }
+
+        openViewAttachmentModal(att){ 
+          const fullscreenView = document.createElement('div');
+          fullscreenView.className = 'fullscreen-attachment';
+          fullscreenView.innerHTML = `
+              <button class="close-fullscreen">&times;</button>
+              <img src="${att.data}" alt="${att.name}">
+          `;
+          const close = () => document.body.removeChild(fullscreenView);
+          fullscreenView.querySelector('.close-fullscreen').addEventListener('click', close);
+          fullscreenView.addEventListener('click', (e) => { if (e.target === fullscreenView) close(); });
+          document.body.appendChild(fullscreenView);
+        }
+        
+        openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        
+        closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        showConfirmModal(title, text, callback) {
+          document.getElementById('confirmModalTitle').textContent = title;
+          document.getElementById('confirmModalText').textContent = text;
+          this.onConfirmCallback = callback;
+          this.openModal('confirmModal');
+        }
+
+        showNotification(msg, type = 'info', duration = 5000){ 
+          const notif = document.getElementById('notification'); 
+          notif.querySelector('#notificationText').textContent = msg; 
+          notif.querySelector('i').className = `fas fa-${type === 'success' ? 'check-circle' : type === 'info' ? 'info-circle' : 'exclamation-circle'}`;
+          notif.className = 'notification show'; 
+          setTimeout(() => notif.className = 'notification', duration); 
+        }
+        
+        resetPlanner() {
+          this.showConfirmModal('Reset Planner?', 'Tutti i dati verranno cancellati. Esporta un backup prima di continuare.', () => {
+              localStorage.removeItem('oaxacaPlannerData');
+              this.tripData = { days: [], background: 'https://images.unsplash.com/photo-1518638150340-f706e_86654de?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80' };
+              this.unsavedChanges = false;
+              this.updateStorageStatus('success', 'Pronto per iniziare');
+              this.updateUI();
+              this.showIntro();
+          });
+        }
+
+        handleImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (importedData && Array.isArray(importedData.days)) {
+                        this.showConfirmModal('Importare Backup?', 'I dati attuali verranno sovrascritti.', () => {
+                            this.tripData = importedData;
+                            this.saveToLocalStorage();
+                            this.updateUI();
+                            this.unsavedChanges = false;
+                            this.updateStorageStatus('success', 'Backup importato');
+                        });
+                    } else {
+                        throw new Error('Formato file non valido');
+                    }
+                } catch {
+                    this.showNotification('File di backup non valido o corrotto.', 'error');
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        startAutoSaveSystem() {
+          // Salva ogni 2 minuti se ci sono state modifiche
+          this.autoSaveInterval = setInterval(() => {
+            if (this.unsavedChanges) {
+              this.autoSaveToJSON();
+            }
+          }, 120000); 
+        }
+      }
+
+      const planner = new AdvancedPlanner();
+    });
+  </script>
+</body>
+</html>
